@@ -313,104 +313,128 @@ function LocIn(props){
   );
 }
 
-// ── PriceBlock with working-time dropdown ─────────────────────────────────────
+// ── PriceBlock with working-time dropdown + checkboxes ───────────────────────
 function PriceBlock(props){
-  var id=props.id,icon=props.icon,label=props.label,prices=props.prices,onChange=props.onChange;
-  var p=prices[id]||{};
-  function set(leg,field,v){onChange(id,leg,field,v);}
-  var legs=[["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
-  var timeFields=[["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
+  // Explicitly extract ALL props at the top so they are in scope everywhere
+  var id          = props.id;
+  var icon        = props.icon;
+  var label       = props.label;
+  var prices      = props.prices;
+  var onChange    = props.onChange;
+  var seatHin     = props.seatHin;
+  var seatRueck   = props.seatRueck;
+  var onSeatHin   = props.onSeatHin;
+  var onSeatRueck = props.onSeatRueck;
+  var baggageHin  = props.baggageHin;
+  var baggageRueck= props.baggageRueck;
+  var onBaggageHin= props.onBaggageHin;
+  var onBaggageRueck = props.onBaggageRueck;
 
-  return React.createElement("div",{className:"tblock"},
-    React.createElement("div",{className:"tblock-hdr"},
-      React.createElement("span",{style:{fontSize:"20px"}},icon),
-      React.createElement("span",{style:{fontSize:"14px",fontWeight:700}},label)
+  var p = prices[id] || {};
+  function set(leg, field, v) { onChange(id, leg, field, v); }
+
+  var legs = [["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
+  var timeFields = [["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
+
+  // Build seat-checkbox rows for Bahn
+  function makeSeatCheckboxes() {
+    if (id !== "bahn") return null;
+    return React.createElement("div", {style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
+      React.createElement("div", {className:"flbl",style:{marginBottom:"8px"}}, "🎫 Sitzplatzreservierung (" + fEur(SEAT_PRICE) + " je Fahrt)"),
+      React.createElement("div", {
+        className: "cb-row" + (seatHin ? " checked" : ""),
+        onClick: function(){ onSeatHin(!seatHin); }
+      },
+        React.createElement("input", {type:"checkbox", checked:seatHin, onChange:function(){}, style:{pointerEvents:"none"}}),
+        React.createElement("div", null,
+          React.createElement("div", {className:"cb-label"}, "↗ Hinreise"),
+          React.createElement("div", {className:"cb-note"}, "Sitzplatz reservieren")
+        ),
+        React.createElement("span", {className:"cb-price"}, seatHin ? fEur(SEAT_PRICE) : "—")
+      ),
+      React.createElement("div", {
+        className: "cb-row" + (seatRueck ? " checked" : ""),
+        onClick: function(){ onSeatRueck(!seatRueck); }
+      },
+        React.createElement("input", {type:"checkbox", checked:seatRueck, onChange:function(){}, style:{pointerEvents:"none"}}),
+        React.createElement("div", null,
+          React.createElement("div", {className:"cb-label"}, "↙ Rückreise"),
+          React.createElement("div", {className:"cb-note"}, "Sitzplatz reservieren")
+        ),
+        React.createElement("span", {className:"cb-price"}, seatRueck ? fEur(SEAT_PRICE) : "—")
+      )
+    );
+  }
+
+  // Build baggage-checkbox rows for Flug
+  function makeBaggageCheckboxes() {
+    if (id !== "flug") return null;
+    return React.createElement("div", {style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
+      React.createElement("div", {className:"flbl",style:{marginBottom:"8px"}}, "🧳 Gepäck aufgeben (" + fEur(BAGGAGE_PRICE) + " je Flug)"),
+      React.createElement("div", {
+        className: "cb-row" + (baggageHin ? " checked" : ""),
+        onClick: function(){ onBaggageHin(!baggageHin); }
+      },
+        React.createElement("input", {type:"checkbox", checked:baggageHin, onChange:function(){}, style:{pointerEvents:"none"}}),
+        React.createElement("div", null,
+          React.createElement("div", {className:"cb-label"}, "↗ Hinflug"),
+          React.createElement("div", {className:"cb-note"}, "Aufgegebenes Gepäck")
+        ),
+        React.createElement("span", {className:"cb-price"}, baggageHin ? fEur(BAGGAGE_PRICE) : "—")
+      ),
+      React.createElement("div", {
+        className: "cb-row" + (baggageRueck ? " checked" : ""),
+        onClick: function(){ onBaggageRueck(!baggageRueck); }
+      },
+        React.createElement("input", {type:"checkbox", checked:baggageRueck, onChange:function(){}, style:{pointerEvents:"none"}}),
+        React.createElement("div", null,
+          React.createElement("div", {className:"cb-label"}, "↙ Rückflug"),
+          React.createElement("div", {className:"cb-note"}, "Aufgegebenes Gepäck")
+        ),
+        React.createElement("span", {className:"cb-price"}, baggageRueck ? fEur(BAGGAGE_PRICE) : "—")
+      )
+    );
+  }
+
+  return React.createElement("div", {className:"tblock"},
+    React.createElement("div", {className:"tblock-hdr"},
+      React.createElement("span", {style:{fontSize:"20px"}}, icon),
+      React.createElement("span", {style:{fontSize:"14px",fontWeight:700}}, label)
     ),
     legs.map(function(legArr){
-      var leg=legArr[0],lbl=legArr[1];
-      var pLeg=p[leg]||{};
-      var durationMin=tDiffMin(pLeg.dep,pLeg.arr);
-      var workOpts=buildWorkOptions(durationMin);
-      var curWork=parseInt(pLeg.work)||0;
-      return React.createElement("div",{key:leg,style:{marginBottom:leg==="hin"?"16px":"0"}},
-        React.createElement("div",{className:"tleg-lbl"},lbl),
-        React.createElement("div",{className:"g3"},
+      var leg = legArr[0], lbl = legArr[1];
+      var pLeg = p[leg] || {};
+      var durationMin = tDiffMin(pLeg.dep, pLeg.arr);
+      var workOpts = buildWorkOptions(durationMin);
+      return React.createElement("div", {key:leg, style:{marginBottom: leg==="hin"?"16px":"0"}},
+        React.createElement("div", {className:"tleg-lbl"}, lbl),
+        React.createElement("div", {className:"g3"},
           timeFields.map(function(fArr){
-            var f=fArr[0],type=fArr[1],lbl2=fArr[2],placeholder=fArr[3];
-            return React.createElement("div",{key:f},
-              React.createElement("div",{className:"flbl"},lbl2),
-              React.createElement("input",{className:"inpsm",type:type,placeholder:placeholder,
-                min:type==="number"?"0":undefined,step:type==="number"?"0.01":undefined,
-                value:pLeg[f]||"",onChange:function(e){set(leg,f,e.target.value);}})
+            var f=fArr[0], type=fArr[1], lbl2=fArr[2], placeholder=fArr[3];
+            return React.createElement("div", {key:f},
+              React.createElement("div", {className:"flbl"}, lbl2),
+              React.createElement("input", {className:"inpsm", type:type, placeholder:placeholder,
+                min:type==="number"?"0":undefined, step:type==="number"?"0.01":undefined,
+                value:pLeg[f]||"", onChange:function(e){ set(leg,f,e.target.value); }})
             );
           })
         ),
-        // Working time dropdown (only shown when duration is known)
-        durationMin>0&&React.createElement("div",{style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
-          React.createElement("span",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}},
-            "💼 Arbeitszeit während der Fahrt:"
-          ),
-          React.createElement("select",{className:"inp",
+        durationMin>0&&React.createElement("div", {style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
+          React.createElement("span", {style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}}, "💼 Arbeitszeit während der Fahrt:"),
+          React.createElement("select", {className:"inp",
             style:{padding:"6px 30px 6px 10px",fontSize:"12px",width:"auto",minWidth:"130px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
             value:pLeg.work||"0",
-            onChange:function(e){set(leg,"work",e.target.value);}},
-            workOpts.map(function(o){
-              return React.createElement("option",{key:o.v,value:String(o.v)},o.l);
-            })
+            onChange:function(e){ set(leg,"work",e.target.value); }},
+            workOpts.map(function(o){ return React.createElement("option",{key:o.v,value:String(o.v)},o.l); })
           ),
-          durationMin>0&&React.createElement("span",{style:{fontSize:"11px",color:"var(--muted)"}},
-            "(max. "+durStr(durationMin)+")"
-          )
+          React.createElement("span", {style:{fontSize:"11px",color:"var(--muted)"}}, "(max. "+durStr(durationMin)+")")
         )
       );
     }),
-    // ── Bahn: Sitzplatzreservierung checkboxes ──────────────────────────────
-    id==="bahn"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"4px",paddingTop:"12px"}},
-      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🎫 Sitzplatzreservierung (je "+fEur(SEAT_PRICE)+"/Fahrt)"),
-      React.createElement("label",{className:"cb-row"+(props.seatHin?" checked":""),
-        onClick:function(e){e.preventDefault();props.onSeatHin(!props.seatHin);}},
-        React.createElement("input",{type:"checkbox",checked:props.seatHin,onChange:function(){},onClick:function(e){e.stopPropagation();props.onSeatHin(!props.seatHin);}}),
-        React.createElement("div",null,
-          React.createElement("div",{className:"cb-label"},"↗ Hinreise"),
-          React.createElement("div",{className:"cb-note"},"Sitzplatz reservieren")
-        ),
-        React.createElement("span",{className:"cb-price"},props.seatHin?fEur(SEAT_PRICE):"—")
-      ),
-      React.createElement("label",{className:"cb-row"+(props.seatRueck?" checked":""),
-        onClick:function(e){e.preventDefault();props.onSeatRueck(!props.seatRueck);}},
-        React.createElement("input",{type:"checkbox",checked:props.seatRueck,onChange:function(){},onClick:function(e){e.stopPropagation();props.onSeatRueck(!props.seatRueck);}}),
-        React.createElement("div",null,
-          React.createElement("div",{className:"cb-label"},"↙ Rückreise"),
-          React.createElement("div",{className:"cb-note"},"Sitzplatz reservieren")
-        ),
-        React.createElement("span",{className:"cb-price"},props.seatRueck?fEur(SEAT_PRICE):"—")
-      )
-    ),
-    // ── Flug: Gepäck checkboxes ──────────────────────────────────────────────
-    id==="flug"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"4px",paddingTop:"12px"}},
-      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🧳 Gepäck aufgeben (je "+fEur(BAGGAGE_PRICE)+"/Flug)"),
-      React.createElement("label",{className:"cb-row"+(props.baggageHin?" checked":""),
-        onClick:function(e){e.preventDefault();props.onBaggageHin(!props.baggageHin);}},
-        React.createElement("input",{type:"checkbox",checked:props.baggageHin,onChange:function(){},onClick:function(e){e.stopPropagation();props.onBaggageHin(!props.baggageHin);}}),
-        React.createElement("div",null,
-          React.createElement("div",{className:"cb-label"},"↗ Hinflug"),
-          React.createElement("div",{className:"cb-note"},"Aufgegebenes Gepäck")
-        ),
-        React.createElement("span",{className:"cb-price"},props.baggageHin?fEur(BAGGAGE_PRICE):"—")
-      ),
-      React.createElement("label",{className:"cb-row"+(props.baggageRueck?" checked":""),
-        onClick:function(e){e.preventDefault();props.onBaggageRueck(!props.baggageRueck);}},
-        React.createElement("input",{type:"checkbox",checked:props.baggageRueck,onChange:function(){},onClick:function(e){e.stopPropagation();props.onBaggageRueck(!props.baggageRueck);}}),
-        React.createElement("div",null,
-          React.createElement("div",{className:"cb-label"},"↙ Rückflug"),
-          React.createElement("div",{className:"cb-note"},"Aufgegebenes Gepäck")
-        ),
-        React.createElement("span",{className:"cb-price"},props.baggageRueck?fEur(BAGGAGE_PRICE):"—")
-      )
-    )
+    makeSeatCheckboxes(),
+    makeBaggageCheckboxes()
   );
 }
-
 // ── Auto block with working time ──────────────────────────────────────────────
 function AutoBlock(props){
   var autoKosten=props.autoKosten,setAutoKosten=props.setAutoKosten;
