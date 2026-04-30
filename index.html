@@ -848,7 +848,6 @@ function App(){
           )
         )
       ),
-      // ── Priority selector ──────────────────────────────────────────────────
       React.createElement("div",{className:"card"},
         React.createElement("div",{className:"ctitle"},
           React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),
@@ -858,27 +857,33 @@ function App(){
           "Wonach soll die beste Option bewertet werden?"
         ),
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}},
-          [
-            {v:"cost",    icon:"💶", label:"Günstigste",   sub:"Kosten zählen"},
-            {v:"balanced",icon:"⚖️",  label:"Ausgewogen",   sub:"Kosten & Zeit"},
-            {v:"time",    icon:"⚡", label:"Schnellste",   sub:"Zeit zählt"},
-          ].map(function(opt){
-            var active=priority===opt.v;
-            return React.createElement("div",{
-              key:opt.v,
-              onClick:function(){setPriority(opt.v);},
-              style:{
-                padding:"12px 10px",borderRadius:"10px",textAlign:"center",cursor:"pointer",
-                border:"1.5px solid "+(active?"var(--gold)":"var(--br)"),
-                background:active?"rgba(251,191,36,0.08)":"var(--s1)",
-                transition:"all 0.15s"
-              }
-            },
-              React.createElement("div",{style:{fontSize:"22px",marginBottom:"4px"}},opt.icon),
-              React.createElement("div",{style:{fontSize:"13px",fontWeight:700,color:active?"var(--gold)":"var(--text)"}},opt.label),
-              React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"2px"}},opt.sub)
-            );
-          })
+          React.createElement("div",{
+            onClick:function(){setPriority("cost");},
+            style:{padding:"12px 10px",borderRadius:"10px",textAlign:"center",cursor:"pointer",transition:"all 0.15s",
+              border:"1.5px solid "+(priority==="cost"?"var(--gold)":"var(--br)"),
+              background:priority==="cost"?"rgba(251,191,36,0.08)":"var(--s1)"}},
+            React.createElement("div",{style:{fontSize:"22px",marginBottom:"4px"}},"💶"),
+            React.createElement("div",{style:{fontSize:"13px",fontWeight:700,color:priority==="cost"?"var(--gold)":"var(--text)"}},"Günstigste"),
+            React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"2px"}},"Kosten zählen")
+          ),
+          React.createElement("div",{
+            onClick:function(){setPriority("balanced");},
+            style:{padding:"12px 10px",borderRadius:"10px",textAlign:"center",cursor:"pointer",transition:"all 0.15s",
+              border:"1.5px solid "+(priority==="balanced"?"var(--gold)":"var(--br)"),
+              background:priority==="balanced"?"rgba(251,191,36,0.08)":"var(--s1)"}},
+            React.createElement("div",{style:{fontSize:"22px",marginBottom:"4px"}},"⚖️"),
+            React.createElement("div",{style:{fontSize:"13px",fontWeight:700,color:priority==="balanced"?"var(--gold)":"var(--text)"}},"Ausgewogen"),
+            React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"2px"}},"Kosten & Zeit")
+          ),
+          React.createElement("div",{
+            onClick:function(){setPriority("time");},
+            style:{padding:"12px 10px",borderRadius:"10px",textAlign:"center",cursor:"pointer",transition:"all 0.15s",
+              border:"1.5px solid "+(priority==="time"?"var(--gold)":"var(--br)"),
+              background:priority==="time"?"rgba(251,191,36,0.08)":"var(--s1)"}},
+            React.createElement("div",{style:{fontSize:"22px",marginBottom:"4px"}},"⚡"),
+            React.createElement("div",{style:{fontSize:"13px",fontWeight:700,color:priority==="time"?"var(--gold)":"var(--text)"}},"Schnellste"),
+            React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"2px"}},"Zeit zählt")
+          )
         )
       ),
       nights>0&&HotelBox({}),
