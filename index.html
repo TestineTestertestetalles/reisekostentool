@@ -210,7 +210,12 @@ var useEffect = React.useEffect;
 var useRef    = React.useRef;
 var useMemo   = React.useMemo;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Constants & Helpers ───────────────────────────────────────────────────────
+var ROAD_FAC      = 1.30;
+var CAR_SPEED     = 110;
+var SEAT_PRICE    = 5.50;
+var BAGGAGE_PRICE = 20;
+
 function haversineKm(lat1,lon1,lat2,lon2){
   var R=6371;
   function toR(d){return d*Math.PI/180;}
@@ -218,15 +223,10 @@ function haversineKm(lat1,lon1,lat2,lon2){
   var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
-var ROAD_FAC=1.30, CAR_SPEED=110;
-var SEAT_PRICE=5.50;   // € je Fahrt (Bahn Sitzplatzreservierung)
-var BAGGAGE_PRICE=20;  // € je Flug (Gepäck)
-
 function fEur(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);}
 function fEurR(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n);}
 function fDate(d){if(!d)return"";return d.split("-").reverse().join(".");}
-function fDateTime(d,t){var ds=fDate(d);return ds+(t?" "+t+" Uhr":"");}
-
+function fDateTime(d,t){return fDate(d)+(t?" "+t+" Uhr":"");}
 function calcNights(d1,d2){
   if(!d1||!d2)return 0;
   var diff=Math.round((new Date(d2)-new Date(d1))/86400000);
@@ -243,35 +243,32 @@ function durStr(min){
   var h=Math.floor(min/60),m=min%60;
   return h>0?(m>0?h+"h "+m+"min":h+"h"):m+"min";
 }
-// Add HH:MM time + minutes → new HH:MM string
-function addMinutes(timeStr,mins){
-  if(!timeStr||!mins)return "";
+function addMins(timeStr,mins){
+  if(!timeStr)return "";
   var p=timeStr.split(":").map(Number);
   var total=p[0]*60+p[1]+mins;
-  var h=Math.floor(total/60)%24,m=total%60;
-  return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+  var hh=Math.floor(((total%1440)+1440)%1440/60);
+  var mm=((total%1440)+1440)%1440%60;
+  return (hh<10?"0":"")+hh+":"+(mm<10?"0":"")+mm;
 }
-
-// ── Working time dropdown options ─────────────────────────────────────────────
-function buildWorkOptions(maxMin){
+function buildWorkOpts(maxMin){
   var opts=[{v:0,l:"Keine Arbeitszeit"}];
   for(var m=10;m<=maxMin;m+=10){
     var h=Math.floor(m/60),r=m%60;
-    var lbl=h>0?(r>0?h+"h "+r+"min":h+"h"):r+"min";
-    opts.push({v:m,l:lbl});
+    opts.push({v:m,l:h>0?(r>0?h+"h "+r+"min":h+"h"):r+"min"});
   }
   return opts;
 }
 
-// ── Nominatim ─────────────────────────────────────────────────────────────────
+// ── Nominatim hook ────────────────────────────────────────────────────────────
 function useNom(q){
-  var r=useState([]);var hits=r[0],setH=r[1];var t=useRef(null);
+  var s=useState([]);var hits=s[0],setH=s[1];var t=useRef(null);
   useEffect(function(){
     if(!q||q.length<2){setH([]);return;}
     clearTimeout(t.current);
     t.current=setTimeout(function(){
       fetch("https://nominatim.openstreetmap.org/search?q="+encodeURIComponent(q)+"&format=json&limit=5&countrycodes=de,at,ch&addressdetails=1",{headers:{"Accept-Language":"de"}})
-      .then(function(res){return res.json();})
+      .then(function(r){return r.json();})
       .then(function(data){
         setH(data.map(function(x){
           var parts=[x.address&&(x.address.city||x.address.town||x.address.village||x.address.county),x.address&&x.address.state].filter(Boolean);
@@ -284,15 +281,15 @@ function useNom(q){
   return hits;
 }
 
-// ── LocIn Component ───────────────────────────────────────────────────────────
+// ── Location input ────────────────────────────────────────────────────────────
 function LocIn(props){
   var val=props.val,chg=props.chg,sel=props.sel,ph=props.ph,icon=props.icon;
-  var or=useState(false);var open=or[0],setOpen=or[1];
+  var os=useState(false);var open=os[0],setOpen=os[1];
   var hits=useNom(val);var ref=useRef(null);
   useEffect(function(){
-    function h(e){if(ref.current&&!ref.current.contains(e.target))setOpen(false);}
-    document.addEventListener("mousedown",h);
-    return function(){document.removeEventListener("mousedown",h);};
+    function fn(e){if(ref.current&&!ref.current.contains(e.target))setOpen(false);}
+    document.addEventListener("mousedown",fn);
+    return function(){document.removeEventListener("mousedown",fn);};
   },[]);
   return React.createElement("div",{ref:ref,className:"acwrap"},
     React.createElement("div",{style:{position:"relative"}},
@@ -313,137 +310,91 @@ function LocIn(props){
   );
 }
 
-// ── PriceBlock with working-time dropdown + checkboxes ───────────────────────
+// ── Checkbox row helper ───────────────────────────────────────────────────────
+function CbRow(props){
+  var checked=props.checked,onToggle=props.onToggle,mainLabel=props.mainLabel,subLabel=props.subLabel,price=props.price;
+  return React.createElement("div",{
+    className:"cb-row"+(checked?" checked":""),
+    onClick:function(){onToggle(!checked);}
+  },
+    React.createElement("input",{type:"checkbox",checked:checked,onChange:function(){},style:{pointerEvents:"none"}}),
+    React.createElement("div",null,
+      React.createElement("div",{className:"cb-label"},mainLabel),
+      React.createElement("div",{className:"cb-note"},subLabel)
+    ),
+    React.createElement("span",{className:"cb-price"},checked?fEur(price):"—")
+  );
+}
+
+// ── Price block (Bahn / Flug) ─────────────────────────────────────────────────
 function PriceBlock(props){
-  // Explicitly extract ALL props at the top so they are in scope everywhere
-  var id          = props.id;
-  var icon        = props.icon;
-  var label       = props.label;
-  var prices      = props.prices;
-  var onChange    = props.onChange;
-  var seatHin     = props.seatHin;
-  var seatRueck   = props.seatRueck;
-  var onSeatHin   = props.onSeatHin;
-  var onSeatRueck = props.onSeatRueck;
-  var baggageHin  = props.baggageHin;
-  var baggageRueck= props.baggageRueck;
-  var onBaggageHin= props.onBaggageHin;
-  var onBaggageRueck = props.onBaggageRueck;
+  var id=props.id,icon=props.icon,label=props.label;
+  var prices=props.prices,onChange=props.onChange;
+  var seatHin=props.seatHin,seatRueck=props.seatRueck;
+  var onSeatHin=props.onSeatHin,onSeatRueck=props.onSeatRueck;
+  var baggageHin=props.baggageHin,baggageRueck=props.baggageRueck;
+  var onBaggageHin=props.onBaggageHin,onBaggageRueck=props.onBaggageRueck;
 
-  var p = prices[id] || {};
-  function set(leg, field, v) { onChange(id, leg, field, v); }
+  var p=prices[id]||{};
+  function set(leg,field,v){onChange(id,leg,field,v);}
 
-  var legs = [["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
-  var timeFields = [["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
+  var legs=[["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
+  var timeFields=[["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
 
-  // Build seat-checkbox rows for Bahn
-  function makeSeatCheckboxes() {
-    if (id !== "bahn") return null;
-    return React.createElement("div", {style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
-      React.createElement("div", {className:"flbl",style:{marginBottom:"8px"}}, "🎫 Sitzplatzreservierung (" + fEur(SEAT_PRICE) + " je Fahrt)"),
-      React.createElement("div", {
-        className: "cb-row" + (seatHin ? " checked" : ""),
-        onClick: function(){ onSeatHin(!seatHin); }
-      },
-        React.createElement("input", {type:"checkbox", checked:seatHin, onChange:function(){}, style:{pointerEvents:"none"}}),
-        React.createElement("div", null,
-          React.createElement("div", {className:"cb-label"}, "↗ Hinreise"),
-          React.createElement("div", {className:"cb-note"}, "Sitzplatz reservieren")
-        ),
-        React.createElement("span", {className:"cb-price"}, seatHin ? fEur(SEAT_PRICE) : "—")
-      ),
-      React.createElement("div", {
-        className: "cb-row" + (seatRueck ? " checked" : ""),
-        onClick: function(){ onSeatRueck(!seatRueck); }
-      },
-        React.createElement("input", {type:"checkbox", checked:seatRueck, onChange:function(){}, style:{pointerEvents:"none"}}),
-        React.createElement("div", null,
-          React.createElement("div", {className:"cb-label"}, "↙ Rückreise"),
-          React.createElement("div", {className:"cb-note"}, "Sitzplatz reservieren")
-        ),
-        React.createElement("span", {className:"cb-price"}, seatRueck ? fEur(SEAT_PRICE) : "—")
-      )
-    );
-  }
-
-  // Build baggage-checkbox rows for Flug
-  function makeBaggageCheckboxes() {
-    if (id !== "flug") return null;
-    return React.createElement("div", {style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
-      React.createElement("div", {className:"flbl",style:{marginBottom:"8px"}}, "🧳 Gepäck aufgeben (" + fEur(BAGGAGE_PRICE) + " je Flug)"),
-      React.createElement("div", {
-        className: "cb-row" + (baggageHin ? " checked" : ""),
-        onClick: function(){ onBaggageHin(!baggageHin); }
-      },
-        React.createElement("input", {type:"checkbox", checked:baggageHin, onChange:function(){}, style:{pointerEvents:"none"}}),
-        React.createElement("div", null,
-          React.createElement("div", {className:"cb-label"}, "↗ Hinflug"),
-          React.createElement("div", {className:"cb-note"}, "Aufgegebenes Gepäck")
-        ),
-        React.createElement("span", {className:"cb-price"}, baggageHin ? fEur(BAGGAGE_PRICE) : "—")
-      ),
-      React.createElement("div", {
-        className: "cb-row" + (baggageRueck ? " checked" : ""),
-        onClick: function(){ onBaggageRueck(!baggageRueck); }
-      },
-        React.createElement("input", {type:"checkbox", checked:baggageRueck, onChange:function(){}, style:{pointerEvents:"none"}}),
-        React.createElement("div", null,
-          React.createElement("div", {className:"cb-label"}, "↙ Rückflug"),
-          React.createElement("div", {className:"cb-note"}, "Aufgegebenes Gepäck")
-        ),
-        React.createElement("span", {className:"cb-price"}, baggageRueck ? fEur(BAGGAGE_PRICE) : "—")
-      )
-    );
-  }
-
-  return React.createElement("div", {className:"tblock"},
-    React.createElement("div", {className:"tblock-hdr"},
-      React.createElement("span", {style:{fontSize:"20px"}}, icon),
-      React.createElement("span", {style:{fontSize:"14px",fontWeight:700}}, label)
+  return React.createElement("div",{className:"tblock"},
+    React.createElement("div",{className:"tblock-hdr"},
+      React.createElement("span",{style:{fontSize:"20px"}},icon),
+      React.createElement("span",{style:{fontSize:"14px",fontWeight:700}},label)
     ),
     legs.map(function(legArr){
-      var leg = legArr[0], lbl = legArr[1];
-      var pLeg = p[leg] || {};
-      var durationMin = tDiffMin(pLeg.dep, pLeg.arr);
-      var workOpts = buildWorkOptions(durationMin);
-      return React.createElement("div", {key:leg, style:{marginBottom: leg==="hin"?"16px":"0"}},
-        React.createElement("div", {className:"tleg-lbl"}, lbl),
-        React.createElement("div", {className:"g3"},
+      var leg=legArr[0],lbl=legArr[1];
+      var pLeg=p[leg]||{};
+      var durMin=tDiffMin(pLeg.dep,pLeg.arr);
+      var wOpts=buildWorkOpts(durMin);
+      return React.createElement("div",{key:leg,style:{marginBottom:leg==="hin"?"16px":"0"}},
+        React.createElement("div",{className:"tleg-lbl"},lbl),
+        React.createElement("div",{className:"g3"},
           timeFields.map(function(fArr){
-            var f=fArr[0], type=fArr[1], lbl2=fArr[2], placeholder=fArr[3];
-            return React.createElement("div", {key:f},
-              React.createElement("div", {className:"flbl"}, lbl2),
-              React.createElement("input", {className:"inpsm", type:type, placeholder:placeholder,
-                min:type==="number"?"0":undefined, step:type==="number"?"0.01":undefined,
-                value:pLeg[f]||"", onChange:function(e){ set(leg,f,e.target.value); }})
+            var f=fArr[0],type=fArr[1],lbl2=fArr[2],ph=fArr[3];
+            return React.createElement("div",{key:f},
+              React.createElement("div",{className:"flbl"},lbl2),
+              React.createElement("input",{className:"inpsm",type:type,placeholder:ph,
+                min:type==="number"?"0":undefined,step:type==="number"?"0.01":undefined,
+                value:pLeg[f]||"",onChange:function(e){set(leg,f,e.target.value);}})
             );
           })
         ),
-        durationMin>0&&React.createElement("div", {style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
-          React.createElement("span", {style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}}, "💼 Arbeitszeit während der Fahrt:"),
-          React.createElement("select", {className:"inp",
+        durMin>0&&React.createElement("div",{style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
+          React.createElement("span",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}},"💼 Arbeitszeit:"),
+          React.createElement("select",{className:"inp",
             style:{padding:"6px 30px 6px 10px",fontSize:"12px",width:"auto",minWidth:"130px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
-            value:pLeg.work||"0",
-            onChange:function(e){ set(leg,"work",e.target.value); }},
-            workOpts.map(function(o){ return React.createElement("option",{key:o.v,value:String(o.v)},o.l); })
+            value:pLeg.work||"0",onChange:function(e){set(leg,"work",e.target.value);}},
+            wOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
           ),
-          React.createElement("span", {style:{fontSize:"11px",color:"var(--muted)"}}, "(max. "+durStr(durationMin)+")")
+          React.createElement("span",{style:{fontSize:"11px",color:"var(--muted)"}},"(max. "+durStr(durMin)+")")
         )
       );
     }),
-    makeSeatCheckboxes(),
-    makeBaggageCheckboxes()
+    id==="bahn"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
+      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🎫 Sitzplatzreservierung ("+fEur(SEAT_PRICE)+" je Fahrt)"),
+      React.createElement(CbRow,{checked:seatHin,onToggle:onSeatHin,mainLabel:"↗ Hinreise",subLabel:"Sitzplatz reservieren",price:SEAT_PRICE}),
+      React.createElement(CbRow,{checked:seatRueck,onToggle:onSeatRueck,mainLabel:"↙ Rückreise",subLabel:"Sitzplatz reservieren",price:SEAT_PRICE})
+    ),
+    id==="flug"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"6px",paddingTop:"12px"}},
+      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🧳 Gepäck aufgeben ("+fEur(BAGGAGE_PRICE)+" je Flug)"),
+      React.createElement(CbRow,{checked:baggageHin,onToggle:onBaggageHin,mainLabel:"↗ Hinflug",subLabel:"Aufgegebenes Gepäck",price:BAGGAGE_PRICE}),
+      React.createElement(CbRow,{checked:baggageRueck,onToggle:onBaggageRueck,mainLabel:"↙ Rückflug",subLabel:"Aufgegebenes Gepäck",price:BAGGAGE_PRICE})
+    )
   );
 }
-// ── Auto block with working time ──────────────────────────────────────────────
+
+// ── Auto block ────────────────────────────────────────────────────────────────
 function AutoBlock(props){
-  var autoKosten=props.autoKosten,setAutoKosten=props.setAutoKosten;
-  var autoKm=props.autoKm;
+  var autoKosten=props.autoKosten,setAutoKosten=props.setAutoKosten,autoKm=props.autoKm;
   var workHin=props.workHin,setWorkHin=props.setWorkHin;
   var workRueck=props.workRueck,setWorkRueck=props.setWorkRueck;
   var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
-  var workOpts=buildWorkOptions(fahrtMin);
-
+  var wOpts=buildWorkOpts(fahrtMin);
   return React.createElement("div",{className:"tblock"},
     React.createElement("div",{className:"tblock-hdr"},
       React.createElement("span",{style:{fontSize:"20px"}},"🚗"),
@@ -457,50 +408,37 @@ function AutoBlock(props){
     autoKm&&React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"5px"}},
       "Geschätzte Strecke: ~"+autoKm+" km · Fahrzeit: ca. "+durStr(fahrtMin)
     ),
-    // Working time for auto
-    fahrtMin>0&&React.createElement("div",{style:{marginTop:"14px"}},
-      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
-        React.createElement("div",null,
-          React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Hinreise"),
-          React.createElement("select",{className:"inp",
-            style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
-            value:workHin,onChange:function(e){setWorkHin(e.target.value);}},
-            workOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
-          )
-        ),
-        React.createElement("div",null,
-          React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Rückreise"),
-          React.createElement("select",{className:"inp",
-            style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
-            value:workRueck,onChange:function(e){setWorkRueck(e.target.value);}},
-            workOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
-          )
+    fahrtMin>0&&React.createElement("div",{style:{marginTop:"14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
+      React.createElement("div",null,
+        React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Hinreise"),
+        React.createElement("select",{className:"inp",
+          style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
+          value:workHin,onChange:function(e){setWorkHin(e.target.value);}},
+          wOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
+        )
+      ),
+      React.createElement("div",null,
+        React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Rückreise"),
+        React.createElement("select",{className:"inp",
+          style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
+          value:workRueck,onChange:function(e){setWorkRueck(e.target.value);}},
+          wOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
         )
       )
     )
   );
 }
 
-// ── Result Card ───────────────────────────────────────────────────────────────
+// ── Result card ───────────────────────────────────────────────────────────────
 function RCard(props){
   var item=props.item,isBest=props.isBest,idx=props.idx;
   var bw=Math.max(5,Math.min(100,100-(item.score/15)*100));
   var barColor=isBest?"linear-gradient(90deg,#fbbf24,#f59e0b)":(bw>60?"#34d399":"#94a3b8");
-
-  // total travel time
   var totalMin=(item.durationHin||0)+(item.durationRueck||0);
-  var totalStr=totalMin>0?durStr(totalMin):"—";
-
-  // combined working time
   var workTotal=(item.workHinMin||0)+(item.workRueckMin||0);
 
-  return React.createElement("div",{
-    className:"rcard"+(isBest?" best":""),
-    style:{animationDelay:(idx*80)+"ms"}
-  },
+  return React.createElement("div",{className:"rcard"+(isBest?" best":""),style:{animationDelay:(idx*80)+"ms"}},
     isBest&&React.createElement("div",{className:"bestbadge"},"★ BESTE WAHL"),
-
-    // Header
     React.createElement("div",{className:"rcard-hdr"},
       React.createElement("div",{className:"ricon "+(isBest?"b":"n")},item.icon),
       React.createElement("div",null,
@@ -508,8 +446,6 @@ function RCard(props){
         React.createElement("span",{className:"rbadge "+item.badgeCls},item.badge)
       )
     ),
-
-    // Key numbers
     React.createElement("div",{className:"rnums"},
       React.createElement("div",null,
         React.createElement("div",{className:"rnl"},"Gesamtkosten"),
@@ -531,33 +467,27 @@ function RCard(props){
         )
       )
     ),
-
-    // Total travel time — highlighted
     totalMin>0&&React.createElement("div",{className:"total-time-row"},
       React.createElement("span",{style:{fontSize:"16px"}},"⏱"),
       React.createElement("div",null,
         React.createElement("div",{className:"total-time-lbl"},"Gesamtreisezeit (Hin + Rück)"),
-        React.createElement("div",{className:"total-time-val"},totalStr)
+        React.createElement("div",{className:"total-time-val"},durStr(totalMin))
       ),
       item.durationHin>0&&React.createElement("div",{style:{marginLeft:"auto",fontSize:"12px",color:"var(--muted)",textAlign:"right",lineHeight:"1.6"}},
         "↗ Hin: "+durStr(item.durationHin),React.createElement("br"),
         item.durationRueck>0?"↙ Rück: "+durStr(item.durationRueck):""
       )
     ),
-
-    // Exact times block
     item.showTimes&&React.createElement("div",{className:"times-block"},
       React.createElement("div",{className:"times-row"},
         React.createElement("span",{className:"times-leg"},"↗ Hinreise"),
-        React.createElement("span",{className:"times-val"},item.hinDep&&item.hinArr?item.hinDep+" → "+item.hinArr+(item.hinDur?" ("+durStr(item.hinDur)+")"):"")
+        React.createElement("span",{className:"times-val"},item.hinDep&&item.hinArr?item.hinDep+" → "+item.hinArr+" ("+durStr(item.hinDur)+")":"")
       ),
       React.createElement("div",{className:"times-row"},
         React.createElement("span",{className:"times-leg"},"↙ Rückreise"),
-        React.createElement("span",{className:"times-val"},item.rueckDep&&item.rueckArr?item.rueckDep+" → "+item.rueckArr+(item.rueckDur?" ("+durStr(item.rueckDur)+")"):item.rueckDep?item.rueckDep+" Abfahrt":"")
+        React.createElement("span",{className:"times-val"},item.rueckDep&&item.rueckArr?item.rueckDep+" → "+item.rueckArr+" ("+durStr(item.rueckDur)+")":item.rueckDep?item.rueckDep+" Abfahrt":"")
       )
     ),
-
-    // Working time
     workTotal>0&&React.createElement("div",{className:"work-row"},
       React.createElement("span",{className:"work-icon"},"💼"),
       React.createElement("span",{className:"work-lbl"},"Produktive Reisezeit gesamt:"),
@@ -566,44 +496,39 @@ function RCard(props){
         "(Hin: "+durStr(item.workHinMin)+" / Rück: "+durStr(item.workRueckMin)+")"
       )
     ),
-
-    // Efficiency bar
     React.createElement("div",{className:"sbar"},
       React.createElement("div",{className:"sbarlbl"},"Effizienz-Score"),
       React.createElement("div",{className:"sbartr"},
         React.createElement("div",{className:"sbarfi",style:{width:bw+"%",background:barColor}})
       )
     ),
-
     item.detail&&React.createElement("div",{className:"rdetail"},item.detail)
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────────────────────
+// ── Main App ──────────────────────────────────────────────────────────────────
 function App(){
-  var r1=useState("form");     var sc=r1[0],setSc=r1[1];
-  var r2=useState("");         var sT=r2[0],setST=r2[1];
-  var r3=useState("");         var zT=r3[0],setZT=r3[1];
-  var r4=useState(null);       var sG=r4[0],setSG=r4[1];
-  var r5=useState(null);       var zG=r5[0],setZG=r5[1];
-  var r6=useState("");         var hD=r6[0],setHD=r6[1];
-  var r7=useState("10:00");    var hT=r7[0],setHT=r7[1];
-  var r8=useState("");         var rD=r8[0],setRD=r8[1];
-  var r9=useState("17:00");    var rT=r9[0],setRT=r9[1];
-  var r10=useState("");        var autoKosten=r10[0],setAutoKosten=r10[1];
-  var r11=useState("0");       var autoWorkHin=r11[0],setAutoWorkHin=r11[1];
-  var r12=useState("0");       var autoWorkRueck=r12[0],setAutoWorkRueck=r12[1];
-  var r13=useState(100);       var hotelPrice=r13[0],setHotelPrice=r13[1];
-  var r14=useState({});        var prices=r14[0],setPrices=r14[1];
-  var r15=useState([]);        var results=r15[0],setResults=r15[1];
-  var r16=useState("");        var err=r16[0],setErr=r16[1];
-  var r17=useState(null);      var printedAt=r17[0],setPrintedAt=r17[1];
-  // Extras: seat reservation (bahn) + baggage (flug)
-  // seatHin, seatRueck = bahn seat checkboxes; baggageHin, baggageRueck = flug baggage
-  var r18=useState(false); var seatHin=r18[0],setSeatHin=r18[1];
-  var r19=useState(false); var seatRueck=r19[0],setSeatRueck=r19[1];
-  var r20=useState(false); var baggageHin=r20[0],setBaggageHin=r20[1];
-  var r21=useState(false); var baggageRueck=r21[0],setBaggageRueck=r21[1];
+  var s1=useState("form");   var sc=s1[0],setSc=s1[1];
+  var s2=useState("");       var sT=s2[0],setST=s2[1];
+  var s3=useState("");       var zT=s3[0],setZT=s3[1];
+  var s4=useState(null);     var sG=s4[0],setSG=s4[1];
+  var s5=useState(null);     var zG=s5[0],setZG=s5[1];
+  var s6=useState("");       var hD=s6[0],setHD=s6[1];
+  var s7=useState("10:00");  var hT=s7[0],setHT=s7[1];
+  var s8=useState("");       var rD=s8[0],setRD=s8[1];
+  var s9=useState("17:00");  var rT=s9[0],setRT=s9[1];
+  var s10=useState("");      var autoKosten=s10[0],setAutoKosten=s10[1];
+  var s11=useState("0");     var autoWorkHin=s11[0],setAutoWorkHin=s11[1];
+  var s12=useState("0");     var autoWorkRueck=s12[0],setAutoWorkRueck=s12[1];
+  var s13=useState(100);     var hotelPrice=s13[0],setHotelPrice=s13[1];
+  var s14=useState({});      var prices=s14[0],setPrices=s14[1];
+  var s15=useState([]);      var results=s15[0],setResults=s15[1];
+  var s16=useState("");      var err=s16[0],setErr=s16[1];
+  var s17=useState(null);    var printedAt=s17[0],setPrintedAt=s17[1];
+  var s18=useState(false);   var seatHin=s18[0],setSeatHin=s18[1];
+  var s19=useState(false);   var seatRueck=s19[0],setSeatRueck=s19[1];
+  var s20=useState(false);   var baggageHin=s20[0],setBaggageHin=s20[1];
+  var s21=useState(false);   var baggageRueck=s21[0],setBaggageRueck=s21[1];
 
   var nights=calcNights(hD,rD);
   var hotelTotal=nights>0?nights*hotelPrice:0;
@@ -627,25 +552,24 @@ function App(){
 
   function step1(){
     if(!sT||!zT||!hD||!rD){setErr("Bitte alle Felder ausfüllen.");return;}
-    if(!sG||!zG){setErr("Bitte Orte aus der Vorschlagsliste wählen (↓).");return;}
+    if(!sG||!zG){setErr("Bitte Orte aus der Vorschlagsliste wählen.");return;}
     setErr("");setSc("links");
   }
 
   function calcRes(){
     var items=[];
 
-    // Auto
+    // ── Auto ──────────────────────────────────────────────────────────────────
     var aK=parseFloat(autoKosten);
     if(!isNaN(aK)&&autoKosten!==""){
       var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
       var autoTotal=aK+hotelTotal;
-      var arrTime=hT&&fahrtMin?addMinutes(hT,-(fahrtMin%1440)):"";
-      // For auto: departure = arrival minus drive time on outbound; return departure = rT
-      var hinDep=hT&&fahrtMin?addMinutes(hT,-(fahrtMin)):hT;
-      var rueckArr=rT&&fahrtMin?addMinutes(rT,fahrtMin):rT;
+      // Abfahrtszeit Hin = Ankunftszeit minus Fahrtdauer
+      var hinDep=fahrtMin>0?addMins(hT,-fahrtMin):hT;
+      var rueckArr=fahrtMin>0?addMins(rT,fahrtMin):rT;
       items.push({
         id:"auto",icon:"🚗",label:"Auto",
-        total:autoTotal,hotel:hotelTotal,nights:nights,
+        total:autoTotal,hotel:hotelTotal,nights:nights,extras:0,
         durationHin:fahrtMin,durationRueck:fahrtMin,
         workHinMin:parseInt(autoWorkHin)||0,
         workRueckMin:parseInt(autoWorkRueck)||0,
@@ -660,7 +584,7 @@ function App(){
       });
     }
 
-    // Bahn / Flug
+    // ── Bahn / Flug ───────────────────────────────────────────────────────────
     TRANS.forEach(function(t){
       var p=prices[t.id];if(!p)return;
       var hP=parseFloat((p.hin&&p.hin.price)||0)||0;
@@ -669,16 +593,15 @@ function App(){
       var dm=tDiffMin(p.hin&&p.hin.dep,p.hin&&p.hin.arr);
       var dmR=tDiffMin(p.rueck&&p.rueck.dep,p.rueck&&p.rueck.arr);
       var transport=hP+rP;
-      // Extras
       var seatExtra=t.id==="bahn"?(seatHin?SEAT_PRICE:0)+(seatRueck?SEAT_PRICE:0):0;
-      var baggageExtra=t.id==="flug"?(baggageHin?BAGGAGE_PRICE:0)+(baggageRueck?BAGGAGE_PRICE:0):0;
-      var extras=seatExtra+baggageExtra;
+      var bagExtra=t.id==="flug"?(baggageHin?BAGGAGE_PRICE:0)+(baggageRueck?BAGGAGE_PRICE:0):0;
+      var extras=seatExtra+bagExtra;
       var total=transport+extras+hotelTotal;
       var wH=parseInt((p.hin&&p.hin.work)||0)||0;
       var wR=parseInt((p.rueck&&p.rueck.work)||0)||0;
-      var extrasDetail="";
-      if(seatExtra>0) extrasDetail+=" + "+fEur(seatExtra)+" Sitzplatz";
-      if(baggageExtra>0) extrasDetail+=" + "+fEur(baggageExtra)+" Gepäck";
+      var extrasStr="";
+      if(seatExtra>0)extrasStr+=" + "+fEur(seatExtra)+" Sitzplatz";
+      if(bagExtra>0)extrasStr+=" + "+fEur(bagExtra)+" Gepäck";
       items.push({
         id:t.id,icon:t.icon,label:t.label,
         total:total,hotel:hotelTotal,nights:nights,extras:extras,
@@ -689,11 +612,11 @@ function App(){
         showTimes:!!(p.hin&&p.hin.dep),
         hinDep:p.hin&&p.hin.dep,hinArr:p.hin&&p.hin.arr,hinDur:dm,
         rueckDep:p.rueck&&p.rueck.dep,rueckArr:p.rueck&&p.rueck.arr,rueckDur:dmR,
-        costDetail:fEur(transport)+extrasDetail+(hotelTotal>0?" + "+fEurR(hotelTotal)+" Hotel":""),
+        costDetail:fEur(transport)+extrasStr+(hotelTotal>0?" + "+fEurR(hotelTotal)+" Hotel":""),
         badge:t.id==="bahn"?"Sparpreis":"Flug",
         badgeCls:t.id==="bahn"?"rbg":"rbm",
         score:total/20+(dm||120)/60,
-        detail:"Hin: "+fEur(hP)+" · Rück: "+fEur(rP)+(extrasDetail?". Extras:"+extrasDetail:"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+fEur(hotelPrice)+" = "+fEurR(hotelTotal)+".":"")
+        detail:"Hin: "+fEur(hP)+" · Rück: "+fEur(rP)+(extrasStr?". Extras:"+extrasStr:"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+fEur(hotelPrice)+" = "+fEurR(hotelTotal)+".":"")
       });
     });
 
@@ -705,9 +628,26 @@ function App(){
 
   var stepIdx={form:0,links:1,prices:2,results:3}[sc]||0;
   var stepLabels=["Eingabe","Omio öffnen","Preise","Ergebnis"];
-
-  // ── Timestamp string ──────────────────────────────────────────────────────
   var tsStr=printedAt?printedAt.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})+" um "+printedAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"";
+
+  // ── Shared UI elements ──────────────────────────────────────────────────────
+  function HotelBox(style2){
+    return React.createElement("div",{className:"hotel-box",style:style2||{}},
+      React.createElement("div",{className:"ctitle",style:{marginBottom:"10px"}},
+        React.createElement("div",{className:"cdot",style:{background:"var(--orange)"}}),
+        "🏨 Hotel – automatisch erkannt"
+      ),
+      React.createElement("div",{className:"hotel-row"},
+        React.createElement("div",{className:"hotel-chip"},nights+" Übernachtung"+(nights>1?"en":"")),
+        React.createElement("span",{style:{color:"var(--muted)"}},"×"),
+        React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",value:hotelPrice,
+          onChange:function(e){setHotelPrice(parseFloat(e.target.value)||0);},style:{maxWidth:"90px"}}),
+        React.createElement("span",{style:{fontSize:"12px",color:"var(--muted)"}},"€ / Nacht"),
+        React.createElement("div",{style:{marginLeft:"auto",fontSize:"18px",fontWeight:700,fontFamily:"'DM Mono',monospace",color:"var(--orange)"}},"= "+fEurR(hotelTotal))
+      ),
+      React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"7px"}},"Wird zu allen Optionen addiert. Preis anpassbar.")
+    );
+  }
 
   return React.createElement(React.Fragment,null,
 
@@ -718,27 +658,22 @@ function App(){
       React.createElement("p",{className:"sub"},"3 Schritte zum besten Reisevergleich.")
     ),
 
-    // ── Step dots
+    // ── Steps
     React.createElement("div",{className:"steps"},
       stepLabels.map(function(s,i){
-        var cls="sdot"+(i<stepIdx?" done":i===stepIdx?" active":"");
         return React.createElement(React.Fragment,{key:s},
           i>0&&React.createElement("div",{className:"sline"}),
-          React.createElement("div",{className:cls,title:s})
+          React.createElement("div",{className:"sdot"+(i<stepIdx?" done":i===stepIdx?" active":""),title:s})
         );
       })
     ),
 
-    // ════════════════════════════════════════════
-    // SCREEN 1 – FORM
-    // ════════════════════════════════════════════
+    // ════════════════════════════════
+    // SCREEN 1 – EINGABE
+    // ════════════════════════════════
     sc==="form"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
-
       React.createElement("div",{className:"card"},
-        React.createElement("div",{className:"ctitle"},
-          React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),
-          "Route"
-        ),
+        React.createElement("div",{className:"ctitle"},React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}), "Route"),
         React.createElement("div",{className:"stk"},
           React.createElement("div",null,
             React.createElement("div",{className:"flbl"},"Startort"),
@@ -755,51 +690,28 @@ function App(){
           )
         )
       ),
-
       React.createElement("div",{className:"card"},
-        React.createElement("div",{className:"ctitle"},
-          React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),
-          "↗ Hinreise – gewünschte Ankunft"
-        ),
+        React.createElement("div",{className:"ctitle"},React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),"↗ Hinreise – gewünschte Ankunft"),
         React.createElement("div",{className:"g2"},
           React.createElement("div",null,React.createElement("div",{className:"flbl"},"Datum"),React.createElement("input",{className:"inp",type:"date",value:hD,onChange:function(e){setHD(e.target.value);}})),
           React.createElement("div",null,React.createElement("div",{className:"flbl"},"Uhrzeit (Ankunft)"),React.createElement("input",{className:"inp",type:"time",value:hT,onChange:function(e){setHT(e.target.value);}}))
         )
       ),
-
       React.createElement("div",{className:"card"},
-        React.createElement("div",{className:"ctitle"},
-          React.createElement("div",{className:"cdot",style:{background:"var(--blue)"}}),
-          "↙ Rückreise – geplante Abfahrt"
-        ),
+        React.createElement("div",{className:"ctitle"},React.createElement("div",{className:"cdot",style:{background:"var(--blue)"}}),"↙ Rückreise – geplante Abfahrt"),
         React.createElement("div",{className:"g2"},
           React.createElement("div",null,React.createElement("div",{className:"flbl"},"Datum"),React.createElement("input",{className:"inp",type:"date",value:rD,onChange:function(e){setRD(e.target.value);}})),
           React.createElement("div",null,React.createElement("div",{className:"flbl"},"Uhrzeit (Abfahrt)"),React.createElement("input",{className:"inp",type:"time",value:rT,onChange:function(e){setRT(e.target.value);}}))
         )
       ),
-
-      nights>0&&React.createElement("div",{className:"hotel-box"},
-        React.createElement("div",{className:"ctitle",style:{marginBottom:"10px"}},
-          React.createElement("div",{className:"cdot",style:{background:"var(--orange)"}}),
-          "🏨 Hotel – automatisch erkannt"
-        ),
-        React.createElement("div",{className:"hotel-row"},
-          React.createElement("div",{className:"hotel-chip"},nights+" Übernachtung"+(nights>1?"en":"")),
-          React.createElement("span",{style:{color:"var(--muted)"}},"×"),
-          React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",value:hotelPrice,onChange:function(e){setHotelPrice(parseFloat(e.target.value)||0);},style:{maxWidth:"90px"}}),
-          React.createElement("span",{style:{fontSize:"12px",color:"var(--muted)"}},"€ / Nacht"),
-          React.createElement("div",{style:{marginLeft:"auto",fontSize:"18px",fontWeight:700,fontFamily:"'DM Mono',monospace",color:"var(--orange)"}},"= "+fEurR(hotelTotal))
-        ),
-        React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"7px"}},"Wird zu allen Reiseoptionen addiert. Preis anpassbar.")
-      ),
-
+      nights>0&&HotelBox({}),
       err&&React.createElement("div",{className:"err"},"⚠ "+err),
       React.createElement("button",{className:"btnp",onClick:step1},"Weiter → Preise suchen")
     ),
 
-    // ════════════════════════════════════════════
+    // ════════════════════════════════
     // SCREEN 2 – OMIO
-    // ════════════════════════════════════════════
+    // ════════════════════════════════
     sc==="links"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
       React.createElement("button",{className:"backbtn",onClick:function(){setSc("form");}},"← Zurück"),
       React.createElement("div",{className:"rpill"},
@@ -817,15 +729,15 @@ function App(){
       React.createElement("div",{className:"hint"},
         "Klicken Sie auf \"Bei Omio suchen\" und geben Sie dort ",
         React.createElement("strong",null,"Start, Ziel und Datum"),
-        " ein. Notieren Sie Preise, Abfahrts- und Ankunftszeiten für Hin- und Rückreise."
+        " ein. Notieren Sie Preise, Abfahrts- und Ankunftszeiten."
       ),
       React.createElement("a",{className:"btn-omio",href:"https://www.omio.at",target:"_blank",rel:"noopener noreferrer"},"👉 Bei Omio suchen ↗"),
       React.createElement("button",{className:"btnp",onClick:function(){setSc("prices");}},"Preise eintragen →")
     ),
 
-    // ════════════════════════════════════════════
-    // SCREEN 3 – PRICE ENTRY
-    // ════════════════════════════════════════════
+    // ════════════════════════════════
+    // SCREEN 3 – PREISE
+    // ════════════════════════════════
     sc==="prices"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
       React.createElement("button",{className:"backbtn",onClick:function(){setSc("links");}},"← Zurück"),
       React.createElement("div",{className:"rpill"},
@@ -833,23 +745,15 @@ function App(){
       ),
       React.createElement("div",{className:"slbl"},"Preise & Zeiten eintragen"),
       React.createElement("p",{style:{fontSize:"13px",color:"var(--muted)",marginBottom:"14px",lineHeight:"1.6"}},
-        "Tragen Sie Preise, Abfahrts- und Ankunftszeiten aus Omio ein. Felder leer lassen = Option wird nicht verglichen."
+        "Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen."
       ),
-
-      React.createElement(AutoBlock,{
-        autoKosten:autoKosten,setAutoKosten:setAutoKosten,
-        autoKm:autoKm,
-        workHin:autoWorkHin,setWorkHin:setAutoWorkHin,
-        workRueck:autoWorkRueck,setWorkRueck:setAutoWorkRueck
-      }),
-
+      React.createElement(AutoBlock,{autoKosten:autoKosten,setAutoKosten:setAutoKosten,autoKm:autoKm,workHin:autoWorkHin,setWorkHin:setAutoWorkHin,workRueck:autoWorkRueck,setWorkRueck:setAutoWorkRueck}),
       TRANS.map(function(t){
         return React.createElement(PriceBlock,{key:t.id,id:t.id,icon:t.icon,label:t.label,prices:prices,onChange:setP,
           seatHin:seatHin,seatRueck:seatRueck,onSeatHin:setSeatHin,onSeatRueck:setSeatRueck,
           baggageHin:baggageHin,baggageRueck:baggageRueck,onBaggageHin:setBaggageHin,onBaggageRueck:setBaggageRueck
         });
       }),
-
       nights>0&&React.createElement("div",{className:"hotel-box"},
         React.createElement("div",{className:"ctitle",style:{marginBottom:"10px"}},
           React.createElement("div",{className:"cdot",style:{background:"var(--orange)"}}),
@@ -863,18 +767,15 @@ function App(){
           React.createElement("div",{style:{marginLeft:"auto",fontSize:"18px",fontWeight:700,fontFamily:"'DM Mono',monospace",color:"var(--orange)"}},"= "+fEurR(hotelTotal))
         )
       ),
-
       err&&React.createElement("div",{className:"err"},"⚠ "+err),
       React.createElement("div",{style:{height:"6px"}}),
       React.createElement("button",{className:"btnp",onClick:calcRes},"Günstigste Option berechnen →")
     ),
 
-    // ════════════════════════════════════════════
-    // SCREEN 4 – RESULTS
-    // ════════════════════════════════════════════
+    // ════════════════════════════════
+    // SCREEN 4 – ERGEBNISSE
+    // ════════════════════════════════
     sc==="results"&&results.length>0&&React.createElement("div",{style:{animation:"fadeIn 0.35s ease"}},
-
-      // Print-only header
       React.createElement("div",{className:"print-header"},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
           React.createElement("div",null,
@@ -888,16 +789,11 @@ function App(){
           )
         )
       ),
-
       React.createElement("button",{className:"backbtn no-print",onClick:function(){setSc("prices");}},"← Preise anpassen"),
-
       React.createElement("div",{className:"rpill no-print"},
         React.createElement("strong",null,sT),React.createElement("span",{className:"rarrow"},"⇄"),React.createElement("strong",null,zT),
-        React.createElement("span",{className:"rmeta"},
-          "Hin: "+fDate(hD)+" · Rück: "+fDate(rD)+(nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":"")
-        )
+        React.createElement("span",{className:"rmeta"},"Hin: "+fDate(hD)+" · Rück: "+fDate(rD)+(nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""))
       ),
-
       React.createElement("div",{className:"recom no-print"},
         React.createElement("span",{style:{fontSize:"20px"}},"💡"),
         React.createElement("div",{className:"recom-text"},
@@ -908,34 +804,30 @@ function App(){
           nights>0?" Inkl. "+nights+" Übernachtung"+(nights>1?"en":"")+" ("+fEurR(hotelTotal)+").":""
         )
       ),
-
       results.map(function(r,i){return React.createElement(RCard,{key:r.id,item:r,isBest:i===0,idx:i});}),
-
-      // Print footer
       React.createElement("div",{className:"print-footer"},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:"6px"}},
-          React.createElement("span",null,"Preise aus Omio · Auto: individuell · Hotel: "+fEur(hotelPrice)+"/Nacht · Adressen via OpenStreetMap"),
+          React.createElement("span",null,"Preise aus Omio · Auto: individuell · Hotel: "+fEur(hotelPrice)+"/Nacht · OpenStreetMap"),
           React.createElement("span",{style:{fontWeight:600}},"Erstellt: "+tsStr)
         )
       ),
-
-      // Screen-only footer note
       React.createElement("div",{className:"no-print",style:{marginTop:"16px",textAlign:"center",fontSize:"11px",color:"#444",lineHeight:1.8}},
         "Preise aus Omio · Auto: individuell · Hotel: "+fEur(hotelPrice)+"/Nacht"
       ),
       React.createElement("div",{style:{height:"12px"}}),
-
       React.createElement("button",{className:"btn-print no-print",onClick:function(){window.print();}},"🖨 Als PDF speichern / Drucken"),
       React.createElement("div",{style:{height:"8px"}}),
-      React.createElement("button",{
-        className:"btnp ghost no-print",
-        onClick:function(){setSc("form");setPrices({});setResults([]);setAutoKosten("");setAutoWorkHin("0");setAutoWorkRueck("0");setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);}
-      },"Neue Suche")
+      React.createElement("button",{className:"btnp ghost no-print",onClick:function(){
+        setSc("form");setPrices({});setResults([]);setAutoKosten("");
+        setAutoWorkHin("0");setAutoWorkRueck("0");
+        setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);
+      }},"Neue Suche")
     )
   );
 }
 
 ReactDOM.createRoot(document.getElementById("app")).render(React.createElement(App));
+
 </script>
 </body>
 </html>
