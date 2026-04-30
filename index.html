@@ -340,8 +340,8 @@ function PriceBlock(props){
 
   // Labels vary by transport type
   var isFlug=(id==="flug");
-  var startLabel=isFlug?"Weg zum Flughafen (min)":"Weg zum Bahnhof (min)";
-  var endLabel=isFlug?"Weg vom Zielflughafen (min)":"Weg vom Zielbahnhof (min)";
+  var startLabel=isFlug?"Weg zum Flughafen inkl. mind. 60 Min. Puffer (min)":"Weg von Zuhause zum Bahnhof (min)";
+  var endLabel=isFlug?"Weg vom Zielflughafen nach Hause (min)":"Weg vom Zielbahnhof nach Hause (min)";
 
   var legs=[["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
   var timeFields=[["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
@@ -371,17 +371,25 @@ function PriceBlock(props){
             );
           })
         ),
-        // Transfer time fields
+        // Transfer time fields — labels differ by leg and transport type
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}},
           React.createElement("div",null,
-            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},startLabel),
+            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},
+              leg==="hin"
+                ? (isFlug?"Weg zum Flughafen inkl. mind. 60 Min. Puffer (min)":"Weg von Zuhause zum Bahnhof (min)")
+                : (isFlug?"Weg zum Rückflug-Flughafen (min)":"Weg zum Rückfahrt-Bahnhof (min)")
+            ),
             React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
               value:pLeg.transferStart||"",
               onChange:function(e){set(leg,"transferStart",e.target.value);},
               style:{borderColor:"rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.06)"}})
           ),
           React.createElement("div",null,
-            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},endLabel),
+            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},
+              leg==="hin"
+                ? (isFlug?"Weg vom Zielflughafen nach Hause (min)":"Weg vom Zielbahnhof nach Hause (min)")
+                : (isFlug?"Weg vom Heimatflughafen nach Hause (min)":"Weg vom Heimatbahnhof nach Hause (min)")
+            ),
             React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
               value:pLeg.transferEnd||"",
               onChange:function(e){set(leg,"transferEnd",e.target.value);},
@@ -460,8 +468,8 @@ function AutoBlock(props){
     autoKm&&React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"5px"}},
       "Geschätzte Strecke: ~"+autoKm+" km · Fahrzeit: ca. "+durStr(fahrtMin)
     ),
-    TransferRow("Hinreise","Weg zum Fuhrpark (min)","Weg zum Ziel (min)",transferHinStart,setTransferHinStart,transferHinEnd,setTransferHinEnd),
-    TransferRow("Rückreise","Weg zum Fuhrpark (min)","Weg zum Ziel (min)",transferRueckStart,setTransferRueckStart,transferRueckEnd,setTransferRueckEnd),
+    TransferRow("Hinreise","Weg von Zuhause zum Fuhrpark (min)","Weg vom Zielort nach Hause (min)",transferHinStart,setTransferHinStart,transferHinEnd,setTransferHinEnd),
+    TransferRow("Rückreise","Weg zum Fahrzeug (min)","Weg vom Fuhrpark nach Hause (min)",transferRueckStart,setTransferRueckStart,transferRueckEnd,setTransferRueckEnd),
     fahrtMin>0&&React.createElement("div",{style:{marginTop:"14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
       React.createElement("div",null,
         React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Hinreise"),
@@ -588,6 +596,9 @@ function App(){
   var s23=useState(""); var autoTrHinEnd=s23[0],setAutoTrHinEnd=s23[1];
   var s24=useState(""); var autoTrRueckStart=s24[0],setAutoTrRueckStart=s24[1];
   var s25=useState(""); var autoTrRueckEnd=s25[0],setAutoTrRueckEnd=s25[1];
+  // Persons & driving licence
+  var s26=useState(1);     var persons=s26[0],setPersons=s26[1];
+  var s27=useState(false); var hasLicence=s27[0],setHasLicence=s27[1];
 
   var nights=calcNights(hD,rD);
   var hotelTotal=nights>0?nights*hotelPrice:0;
@@ -618,9 +629,9 @@ function App(){
   function calcRes(){
     var items=[];
 
-    // ── Auto ──────────────────────────────────────────────────────────────────
+    // ── Auto (only if licence available) ──────────────────────────────────────
     var aK=parseFloat(autoKosten);
-    if(!isNaN(aK)&&autoKosten!==""){
+    if(!isNaN(aK)&&autoKosten!==""&&hasLicence){
       var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
       var autoTotal=aK+hotelTotal;
       // Abfahrtszeit Hin = Ankunftszeit minus Fahrtdauer
@@ -772,6 +783,45 @@ function App(){
           React.createElement("div",null,React.createElement("div",{className:"flbl"},"Uhrzeit (Abfahrt)"),React.createElement("input",{className:"inp",type:"time",value:rT,onChange:function(e){setRT(e.target.value);}}))
         )
       ),
+      // ── Persons & licence card ──────────────────────────────────────────────
+      React.createElement("div",{className:"card"},
+        React.createElement("div",{className:"ctitle"},
+          React.createElement("div",{className:"cdot",style:{background:"var(--blue)"}}),
+          "👥 Reisende"
+        ),
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"16px",flexWrap:"wrap",marginBottom:"14px"}},
+          React.createElement("div",{className:"flbl",style:{marginBottom:0}},"Anzahl Personen"),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
+            React.createElement("button",{
+              style:{width:"32px",height:"32px",borderRadius:"50%",border:"1.5px solid var(--br)",background:"var(--s2)",color:"var(--text)",fontSize:"18px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1},
+              onClick:function(){setPersons(function(p){return Math.max(1,p-1);});}
+            },"−"),
+            React.createElement("span",{style:{fontSize:"22px",fontWeight:700,fontFamily:"'DM Mono',monospace",minWidth:"32px",textAlign:"center"}},persons),
+            React.createElement("button",{
+              style:{width:"32px",height:"32px",borderRadius:"50%",border:"1.5px solid var(--br)",background:"var(--s2)",color:"var(--text)",fontSize:"18px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1},
+              onClick:function(){setPersons(function(p){return Math.min(20,p+1);});}
+            },"+")
+          ),
+          React.createElement("span",{style:{fontSize:"13px",color:"var(--muted)"}},
+            persons===1?"1 Person reist allein":persons+" Personen reisen gemeinsam"
+          )
+        ),
+        React.createElement("div",{
+          className:"cb-row"+(hasLicence?" checked":""),
+          onClick:function(){setHasLicence(function(v){return !v;});},
+          style:{marginTop:"4px"}
+        },
+          React.createElement("input",{type:"checkbox",checked:hasLicence,onChange:function(){},style:{pointerEvents:"none"}}),
+          React.createElement("div",null,
+            React.createElement("div",{className:"cb-label"},"Gültige Fahrerlaubnis vorhanden"),
+            React.createElement("div",{className:"cb-note"},
+              hasLicence
+                ? "✓ Mindestens eine Person verfügt über einen gültigen Führerschein → Auto-Option wird berücksichtigt"
+                : "Kein gültiger Führerschein → Auto-Option wird ausgeschlossen"
+            )
+          )
+        )
+      ),
       nights>0&&HotelBox({}),
       err&&React.createElement("div",{className:"err"},"⚠ "+err),
       React.createElement("button",{className:"btnp",onClick:step1},"Weiter → Preise suchen")
@@ -893,7 +943,7 @@ function App(){
       React.createElement("button",{className:"btnp ghost no-print",onClick:function(){
         setSc("form");setPrices({});setResults([]);setAutoKosten("");
         setAutoWorkHin("0");setAutoWorkRueck("0");
-        setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);setAutoTrHinStart("");setAutoTrHinEnd("");setAutoTrRueckStart("");setAutoTrRueckEnd("");
+        setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);setAutoTrHinStart("");setAutoTrHinEnd("");setAutoTrRueckStart("");setAutoTrRueckEnd("");setPersons(1);setHasLicence(false);
       }},"Neue Suche")
     )
   );
