@@ -338,6 +338,11 @@ function PriceBlock(props){
   var p=prices[id]||{};
   function set(leg,field,v){onChange(id,leg,field,v);}
 
+  // Labels vary by transport type
+  var isFlug=(id==="flug");
+  var startLabel=isFlug?"Weg zum Flughafen (min)":"Weg zum Bahnhof (min)";
+  var endLabel=isFlug?"Weg vom Zielflughafen (min)":"Weg vom Zielbahnhof (min)";
+
   var legs=[["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
   var timeFields=[["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
 
@@ -350,8 +355,10 @@ function PriceBlock(props){
       var leg=legArr[0],lbl=legArr[1];
       var pLeg=p[leg]||{};
       var durMin=tDiffMin(pLeg.dep,pLeg.arr);
+      var transferStart=parseInt(pLeg.transferStart)||0;
+      var transferEnd=parseInt(pLeg.transferEnd)||0;
       var wOpts=buildWorkOpts(durMin);
-      return React.createElement("div",{key:leg,style:{marginBottom:leg==="hin"?"16px":"0"}},
+      return React.createElement("div",{key:leg,style:{marginBottom:leg==="hin"?"18px":"0"}},
         React.createElement("div",{className:"tleg-lbl"},lbl),
         React.createElement("div",{className:"g3"},
           timeFields.map(function(fArr){
@@ -363,6 +370,23 @@ function PriceBlock(props){
                 value:pLeg[f]||"",onChange:function(e){set(leg,f,e.target.value);}})
             );
           })
+        ),
+        // Transfer time fields
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}},
+          React.createElement("div",null,
+            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},startLabel),
+            React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
+              value:pLeg.transferStart||"",
+              onChange:function(e){set(leg,"transferStart",e.target.value);},
+              style:{borderColor:"rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.06)"}})
+          ),
+          React.createElement("div",null,
+            React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},endLabel),
+            React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
+              value:pLeg.transferEnd||"",
+              onChange:function(e){set(leg,"transferEnd",e.target.value);},
+              style:{borderColor:"rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.06)"}})
+          )
         ),
         durMin>0&&React.createElement("div",{style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
           React.createElement("span",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}},"💼 Arbeitszeit:"),
@@ -393,8 +417,36 @@ function AutoBlock(props){
   var autoKosten=props.autoKosten,setAutoKosten=props.setAutoKosten,autoKm=props.autoKm;
   var workHin=props.workHin,setWorkHin=props.setWorkHin;
   var workRueck=props.workRueck,setWorkRueck=props.setWorkRueck;
+  var transferHinStart=props.transferHinStart,setTransferHinStart=props.setTransferHinStart;
+  var transferHinEnd=props.transferHinEnd,setTransferHinEnd=props.setTransferHinEnd;
+  var transferRueckStart=props.transferRueckStart,setTransferRueckStart=props.setTransferRueckStart;
+  var transferRueckEnd=props.transferRueckEnd,setTransferRueckEnd=props.setTransferRueckEnd;
   var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
   var wOpts=buildWorkOpts(fahrtMin);
+
+  // Transfer row helper
+  function TransferRow(leg,lblStart,lblEnd,valStart,setStart,valEnd,setEnd){
+    return React.createElement("div",{style:{marginTop:"10px"}},
+      React.createElement("div",{className:"flbl",style:{color:"var(--blue)",marginBottom:"6px"}},
+        "🚌 Transferzeiten "+leg
+      ),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+        React.createElement("div",null,
+          React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},lblStart),
+          React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
+            value:valStart,onChange:function(e){setStart(e.target.value);},
+            style:{borderColor:"rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.06)"}})
+        ),
+        React.createElement("div",null,
+          React.createElement("div",{className:"flbl",style:{color:"var(--blue)",fontSize:"10px"}},lblEnd),
+          React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",placeholder:"0",
+            value:valEnd,onChange:function(e){setEnd(e.target.value);},
+            style:{borderColor:"rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.06)"}})
+        )
+      )
+    );
+  }
+
   return React.createElement("div",{className:"tblock"},
     React.createElement("div",{className:"tblock-hdr"},
       React.createElement("span",{style:{fontSize:"20px"}},"🚗"),
@@ -408,6 +460,8 @@ function AutoBlock(props){
     autoKm&&React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"5px"}},
       "Geschätzte Strecke: ~"+autoKm+" km · Fahrzeit: ca. "+durStr(fahrtMin)
     ),
+    TransferRow("Hinreise","Weg zum Fuhrpark (min)","Weg zum Ziel (min)",transferHinStart,setTransferHinStart,transferHinEnd,setTransferHinEnd),
+    TransferRow("Rückreise","Weg zum Fuhrpark (min)","Weg zum Ziel (min)",transferRueckStart,setTransferRueckStart,transferRueckEnd,setTransferRueckEnd),
     fahrtMin>0&&React.createElement("div",{style:{marginTop:"14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
       React.createElement("div",null,
         React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Hinreise"),
@@ -529,6 +583,11 @@ function App(){
   var s19=useState(false);   var seatRueck=s19[0],setSeatRueck=s19[1];
   var s20=useState(false);   var baggageHin=s20[0],setBaggageHin=s20[1];
   var s21=useState(false);   var baggageRueck=s21[0],setBaggageRueck=s21[1];
+  // Transfer times for Auto (minutes)
+  var s22=useState(""); var autoTrHinStart=s22[0],setAutoTrHinStart=s22[1];
+  var s23=useState(""); var autoTrHinEnd=s23[0],setAutoTrHinEnd=s23[1];
+  var s24=useState(""); var autoTrRueckStart=s24[0],setAutoTrRueckStart=s24[1];
+  var s25=useState(""); var autoTrRueckEnd=s25[0],setAutoTrRueckEnd=s25[1];
 
   var nights=calcNights(hD,rD);
   var hotelTotal=nights>0?nights*hotelPrice:0;
@@ -567,10 +626,15 @@ function App(){
       // Abfahrtszeit Hin = Ankunftszeit minus Fahrtdauer
       var hinDep=fahrtMin>0?addMins(hT,-fahrtMin):hT;
       var rueckArr=fahrtMin>0?addMins(rT,fahrtMin):rT;
+      var autoTrHS=parseInt(autoTrHinStart)||0;
+      var autoTrHE=parseInt(autoTrHinEnd)||0;
+      var autoTrRS=parseInt(autoTrRueckStart)||0;
+      var autoTrRE=parseInt(autoTrRueckEnd)||0;
       items.push({
         id:"auto",icon:"🚗",label:"Auto",
         total:autoTotal,hotel:hotelTotal,nights:nights,extras:0,
-        durationHin:fahrtMin,durationRueck:fahrtMin,
+        durationHin:fahrtMin+autoTrHS+autoTrHE,
+        durationRueck:fahrtMin+autoTrRS+autoTrRE,
         workHinMin:parseInt(autoWorkHin)||0,
         workRueckMin:parseInt(autoWorkRueck)||0,
         showTimes:fahrtMin>0,
@@ -592,6 +656,10 @@ function App(){
       if(hP===0&&rP===0)return;
       var dm=tDiffMin(p.hin&&p.hin.dep,p.hin&&p.hin.arr);
       var dmR=tDiffMin(p.rueck&&p.rueck.dep,p.rueck&&p.rueck.arr);
+      var trHS=parseInt((p.hin&&p.hin.transferStart)||0)||0;
+      var trHE=parseInt((p.hin&&p.hin.transferEnd)||0)||0;
+      var trRS=parseInt((p.rueck&&p.rueck.transferStart)||0)||0;
+      var trRE=parseInt((p.rueck&&p.rueck.transferEnd)||0)||0;
       var transport=hP+rP;
       var seatExtra=t.id==="bahn"?(seatHin?SEAT_PRICE:0)+(seatRueck?SEAT_PRICE:0):0;
       var bagExtra=t.id==="flug"?(baggageHin?BAGGAGE_PRICE:0)+(baggageRueck?BAGGAGE_PRICE:0):0;
@@ -607,7 +675,7 @@ function App(){
         total:total,hotel:hotelTotal,nights:nights,extras:extras,
         seatHin:t.id==="bahn"&&seatHin,seatRueck:t.id==="bahn"&&seatRueck,
         baggageHin:t.id==="flug"&&baggageHin,baggageRueck:t.id==="flug"&&baggageRueck,
-        durationHin:dm,durationRueck:dmR,
+        durationHin:dm+trHS+trHE,durationRueck:dmR+trRS+trRE,
         workHinMin:wH,workRueckMin:wR,
         showTimes:!!(p.hin&&p.hin.dep),
         hinDep:p.hin&&p.hin.dep,hinArr:p.hin&&p.hin.arr,hinDur:dm,
@@ -747,7 +815,12 @@ function App(){
       React.createElement("p",{style:{fontSize:"13px",color:"var(--muted)",marginBottom:"14px",lineHeight:"1.6"}},
         "Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen."
       ),
-      React.createElement(AutoBlock,{autoKosten:autoKosten,setAutoKosten:setAutoKosten,autoKm:autoKm,workHin:autoWorkHin,setWorkHin:setAutoWorkHin,workRueck:autoWorkRueck,setWorkRueck:setAutoWorkRueck}),
+      React.createElement(AutoBlock,{autoKosten:autoKosten,setAutoKosten:setAutoKosten,autoKm:autoKm,workHin:autoWorkHin,setWorkHin:setAutoWorkHin,workRueck:autoWorkRueck,setWorkRueck:setAutoWorkRueck,
+        transferHinStart:autoTrHinStart,setTransferHinStart:setAutoTrHinStart,
+        transferHinEnd:autoTrHinEnd,setTransferHinEnd:setAutoTrHinEnd,
+        transferRueckStart:autoTrRueckStart,setTransferRueckStart:setAutoTrRueckStart,
+        transferRueckEnd:autoTrRueckEnd,setTransferRueckEnd:setAutoTrRueckEnd
+      }),
       TRANS.map(function(t){
         return React.createElement(PriceBlock,{key:t.id,id:t.id,icon:t.icon,label:t.label,prices:prices,onChange:setP,
           seatHin:seatHin,seatRueck:seatRueck,onSeatHin:setSeatHin,onSeatRueck:setSeatRueck,
@@ -820,7 +893,7 @@ function App(){
       React.createElement("button",{className:"btnp ghost no-print",onClick:function(){
         setSc("form");setPrices({});setResults([]);setAutoKosten("");
         setAutoWorkHin("0");setAutoWorkRueck("0");
-        setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);
+        setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);setAutoTrHinStart("");setAutoTrHinEnd("");setAutoTrRueckStart("");setAutoTrRueckEnd("");
       }},"Neue Suche")
     )
   );
