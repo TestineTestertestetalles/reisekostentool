@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reisekostentool</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&display=swap');
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0c0c14;--s1:rgba(255,255,255,0.04);--s2:rgba(255,255,255,0.07);
+      --br:rgba(255,255,255,0.09);
+      --gold:#fbbf24;--gold2:#f59e0b;--green:#34d399;--red:#f87171;
+      --orange:#fb923c;--blue:#60a5fa;--purple:#a78bfa;
+      --text:#e8e8f0;--muted:#6b6b8a;
+      --r:14px;--rs:8px;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+    body::before{content:'';position:fixed;inset:0;background:
+      radial-gradient(ellipse 60% 40% at 15% 20%,rgba(251,191,36,0.06) 0%,transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 80%,rgba(96,165,250,0.04) 0%,transparent 60%);
+      pointer-events:none;z-index:0;}
+    #app{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:40px 20px 80px;}
+
+    .hdr{text-align:center;margin-bottom:36px;}
+    .badge{display:inline-flex;align-items:center;gap:7px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:20px;padding:5px 14px;margin-bottom:16px;font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.08em;}
+    .pulse{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+    h1{font-size:clamp(26px,5vw,34px);font-weight:700;line-height:1.15;letter-spacing:-0.02em;}
+    h1 span{color:var(--gold);}
+    .sub{color:var(--muted);font-size:14px;margin-top:8px;}
+
+    .steps{display:flex;align-items:center;gap:6px;margin-bottom:28px;justify-content:center;}
+    .sdot{width:8px;height:8px;border-radius:50%;background:var(--br);transition:all 0.3s;}
+    .sdot.active{background:var(--gold);transform:scale(1.35);}
+    .sdot.done{background:var(--green);}
+    .sline{flex:1;max-width:40px;height:1px;background:var(--br);}
+
+    .card{background:var(--s1);border:1px solid var(--br);border-radius:var(--r);padding:22px;margin-bottom:10px;}
+    .ctitle{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+    .cdot{width:6px;height:6px;border-radius:50%;}
+
+    .flbl{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;}
+    .inp{width:100%;background:var(--s2);border:1.5px solid var(--br);border-radius:var(--rs);padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s,background 0.2s;}
+    .inp:focus{border-color:rgba(251,191,36,0.6);background:rgba(255,255,255,0.09);}
+    .inp::placeholder{color:rgba(255,255,255,0.2);}
+    input[type=date],input[type=time]{color-scheme:dark;}
+    input[type=number]::-webkit-inner-spin-button{opacity:0.4;}
+    select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b8a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+    .stk{display:flex;flex-direction:column;gap:11px;}
+    .inpsm{background:rgba(255,255,255,0.06);border:1px solid var(--br);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none;width:100%;transition:border-color 0.15s;}
+    .inpsm:focus{border-color:rgba(251,191,36,0.5);}
+    .inpsm::placeholder{color:rgba(255,255,255,0.2);font-family:'DM Sans',sans-serif;}
+
+    .acwrap{position:relative;}
+    .drop{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:999;background:#1a1a2e;border:1px solid rgba(251,191,36,0.25);border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+    .ditem{padding:9px 13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.1s;}
+    .ditem:last-child{border-bottom:none;}
+    .ditem:hover{background:rgba(251,191,36,0.08);}
+    .dmain{font-size:13px;font-weight:600;color:#f0f0f0;}
+    .dsub{font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+    .div-row{display:flex;align-items:center;gap:10px;margin:2px 0;}
+    .divl{flex:1;height:1px;background:var(--br);}
+    .swapbtn{background:var(--s2);border:1px solid var(--br);border-radius:var(--rs);width:36px;height:36px;cursor:pointer;color:var(--muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+    .swapbtn:hover{background:rgba(255,255,255,0.1);color:var(--text);}
+
+    .btnp{width:100%;padding:14px;border:none;border-radius:var(--rs);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1000;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:0.01em;box-shadow:0 4px 20px rgba(251,191,36,0.2);transition:transform 0.15s,box-shadow 0.15s;}
+    .btnp:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(251,191,36,0.35);}
+    .btnp:active{transform:none;}
+    .btnp.ghost{background:rgba(255,255,255,0.06);color:var(--muted);box-shadow:none;border:1px solid var(--br);}
+    .btnp.ghost:hover{background:rgba(255,255,255,0.1);color:var(--text);box-shadow:none;}
+    .btn-omio{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:var(--rs);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:var(--text);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;transition:all 0.15s;letter-spacing:0.01em;margin-bottom:16px;}
+    .btn-omio:hover{background:rgba(255,255,255,0.11);}
+    .btn-print{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:var(--rs);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);color:var(--purple);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s;margin-top:10px;}
+    .btn-print:hover{background:rgba(167,139,250,0.18);}
+    .backbtn{display:inline-flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--br);border-radius:var(--rs);padding:8px 13px;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:18px;transition:all 0.15s;}
+    .backbtn:hover{background:var(--s2);color:var(--text);}
+
+    .err{padding:10px 13px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:var(--rs);color:var(--red);font-size:13px;margin-bottom:10px;}
+    .rpill{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--br);border-radius:var(--rs);padding:9px 13px;font-size:13px;margin-bottom:18px;}
+    .rpill strong{color:var(--text);}
+    .rarrow{color:var(--gold);font-size:14px;}
+    .rmeta{margin-left:auto;color:var(--muted);font-size:11px;}
+    .slbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+    .slbl::after{content:'';flex:1;height:1px;background:var(--br);}
+    .hint{font-size:12px;color:var(--muted);line-height:1.6;padding:10px 13px;background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.15);border-radius:var(--rs);margin-bottom:14px;}
+
+    .tblock{background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:16px;margin-bottom:10px;}
+    .tblock-hdr{display:flex;align-items:center;gap:9px;margin-bottom:13px;}
+    .tleg-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.07em;}
+
+    .hotel-box{background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:var(--rs);padding:16px;margin-bottom:10px;}
+    .hotel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .hotel-chip{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap;}
+
+    /* Working time box */
+    .work-box{background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);padding:14px 16px;margin-bottom:10px;}
+
+    /* Result cards */
+    .rcard{background:var(--s1);border:1.5px solid var(--br);border-radius:var(--r);padding:20px 22px;position:relative;overflow:hidden;animation:slideUp 0.4s ease both;margin-bottom:10px;}
+    .rcard.best{background:linear-gradient(135deg,rgba(251,191,36,0.09),rgba(251,191,36,0.03));border-color:rgba(251,191,36,0.45);}
+    @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .bestbadge{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1000;font-size:9px;font-weight:800;padding:5px 12px;border-radius:0 12px 0 8px;letter-spacing:0.08em;}
+    .rcard-hdr{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+    .ricon{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+    .ricon.b{background:rgba(251,191,36,0.15);}
+    .ricon.n{background:rgba(255,255,255,0.06);}
+    .rname{font-size:16px;font-weight:700;}
+    .rbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:5px;}
+    .rbg{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3);}
+    .rbo{background:rgba(251,191,36,0.12);color:var(--gold);border:1px solid rgba(251,191,36,0.3);}
+    .rbm{background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--br);}
+
+    /* Numbers grid in result card */
+    .rnums{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px 20px;margin-bottom:14px;}
+    .rnl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+    .rnv{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;}
+    .rnv.lg{font-size:24px;}
+    .rns{font-size:11px;color:var(--muted);margin-top:2px;}
+
+    /* Total time highlight */
+    .total-time-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;margin-bottom:12px;}
+    .total-time-val{font-size:22px;font-weight:800;font-family:'DM Mono',monospace;color:var(--text);}
+    .total-time-lbl{font-size:11px;color:var(--muted);}
+
+    /* Times detail block */
+    .times-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;}
+    .times-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+    .times-row:last-child{border-bottom:none;}
+    .times-leg{color:var(--muted);font-weight:600;}
+    .times-val{color:var(--text);font-family:'DM Mono',monospace;}
+
+    /* Working time row */
+    .work-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
+    /* Checkbox extras */
+    .cb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:7px;cursor:pointer;transition:background 0.15s;user-select:none;margin-top:8px;}
+    .cb-row:hover{background:rgba(255,255,255,0.07);}
+    .cb-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+    .cb-row.checked{background:rgba(251,191,36,0.07);border-color:rgba(251,191,36,0.25);}
+    .cb-label{font-size:13px;font-weight:600;color:var(--text);}
+    .cb-price{margin-left:auto;font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--gold);}
+    .cb-note{font-size:11px;color:var(--muted);margin-top:2px;}
+    .work-icon{font-size:14px;}
+    .work-lbl{font-size:12px;color:var(--muted);}
+    .work-val{font-size:13px;font-weight:700;color:var(--purple);font-family:'DM Mono',monospace;}
+
+    .sbar{margin-bottom:10px;}
+    .sbarlbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+    .sbartr{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;}
+    .sbarfi{height:100%;border-radius:2px;}
+    .rdetail{font-size:12px;color:var(--muted);line-height:1.7;}
+    .recom{display:flex;align-items:flex-start;gap:11px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:var(--rs);padding:13px 15px;margin-bottom:14px;}
+    .recom-text{font-size:13px;color:#c8a84b;line-height:1.6;}
+    .recom-text strong{color:var(--gold);}
+
+    /* ── PRINT STYLES ─────────────────────────────────────────────── */
+    .print-only{display:none;}
+    @media print {
+      @page{margin:15mm 12mm;}
+      body{background:#fff!important;color:#111!important;font-size:11pt;}
+      body::before{display:none!important;}
+      .no-print{display:none!important;}
+      .print-only{display:block!important;}
+      #app{padding:0!important;max-width:100%!important;}
+      .hdr,.steps,.rpill,.recom,.backbtn,.btn-print,.btnp,.err,.sbar{display:none!important;}
+      .rcard{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid;page-break-inside:avoid;animation:none!important;margin-bottom:12px!important;padding:14px!important;}
+      .rcard.best{border:2px solid #f59e0b!important;background:#fffbef!important;}
+      .bestbadge{background:#f59e0b!important;color:#1a1000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .ricon.b{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .ricon.n{background:#f3f4f6!important;}
+      .rnv{color:#111!important;}
+      .total-time-row{background:#f9fafb!important;border:1px solid #e5e7eb!important;}
+      .total-time-val{color:#111!important;}
+      .times-block{background:#f9fafb!important;border:1px solid #e5e7eb!important;}
+      .times-row{border-bottom:1px solid #e5e7eb!important;}
+      .times-leg{color:#555!important;}
+      .times-val{color:#111!important;}
+      .work-row{background:#f5f3ff!important;border-radius:4px;padding:4px 8px!important;}
+      .cb-row{border:1px solid #e5e7eb!important;background:#fff!important;}
+      .cb-row.checked{background:#fffbeb!important;border-color:#f59e0b!important;}
+      .cb-price{color:#92400e!important;}
+      .work-val{color:#6d28d9!important;}
+      .work-lbl{color:#555!important;}
+      .hotel-chip{background:#fef3c7!important;color:#92400e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .rbadge.rbg{background:#d1fae5!important;color:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .rbadge.rbo{background:#fef3c7!important;color:#92400e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .rdetail{color:#555!important;}
+      .rnl,.rns,.sbarlbl{color:#666!important;}
+      h1 span{color:#f59e0b!important;-webkit-text-fill-color:#f59e0b!important;}
+      .print-header{display:block!important;}
+      .print-footer{display:block!important;}
+    }
+    .print-header{display:none;border-bottom:2px solid #f59e0b;padding-bottom:10px;margin-bottom:16px;}
+    .print-footer{display:none;border-top:1px solid #ddd;margin-top:16px;padding-top:10px;font-size:9pt;color:#888;}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+
+var useState  = React.useState;
+var useEffect = React.useEffect;
+var useRef    = React.useRef;
+var useMemo   = React.useMemo;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function haversineKm(lat1,lon1,lat2,lon2){
+  var R=6371;
+  function toR(d){return d*Math.PI/180;}
+  var dLat=toR(lat2-lat1),dLon=toR(lon2-lon1);
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+var ROAD_FAC=1.30, CAR_SPEED=110;
+var SEAT_PRICE=5.50;   // € je Fahrt (Bahn Sitzplatzreservierung)
+var BAGGAGE_PRICE=20;  // € je Flug (Gepäck)
+
+function fEur(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);}
+function fEurR(n){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n);}
+function fDate(d){if(!d)return"";return d.split("-").reverse().join(".");}
+function fDateTime(d,t){var ds=fDate(d);return ds+(t?" "+t+" Uhr":"");}
+
+function calcNights(d1,d2){
+  if(!d1||!d2)return 0;
+  var diff=Math.round((new Date(d2)-new Date(d1))/86400000);
+  return diff>0?diff:0;
+}
+function tDiffMin(dep,arr){
+  if(!dep||!arr)return 0;
+  var dp=dep.split(":").map(Number),ap=arr.split(":").map(Number);
+  var v=(ap[0]*60+ap[1])-(dp[0]*60+dp[1]);
+  return v<0?v+1440:v;
+}
+function durStr(min){
+  if(!min||min<=0)return "—";
+  var h=Math.floor(min/60),m=min%60;
+  return h>0?(m>0?h+"h "+m+"min":h+"h"):m+"min";
+}
+// Add HH:MM time + minutes → new HH:MM string
+function addMinutes(timeStr,mins){
+  if(!timeStr||!mins)return "";
+  var p=timeStr.split(":").map(Number);
+  var total=p[0]*60+p[1]+mins;
+  var h=Math.floor(total/60)%24,m=total%60;
+  return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+}
+
+// ── Working time dropdown options ─────────────────────────────────────────────
+function buildWorkOptions(maxMin){
+  var opts=[{v:0,l:"Keine Arbeitszeit"}];
+  for(var m=10;m<=maxMin;m+=10){
+    var h=Math.floor(m/60),r=m%60;
+    var lbl=h>0?(r>0?h+"h "+r+"min":h+"h"):r+"min";
+    opts.push({v:m,l:lbl});
+  }
+  return opts;
+}
+
+// ── Nominatim ─────────────────────────────────────────────────────────────────
+function useNom(q){
+  var r=useState([]);var hits=r[0],setH=r[1];var t=useRef(null);
+  useEffect(function(){
+    if(!q||q.length<2){setH([]);return;}
+    clearTimeout(t.current);
+    t.current=setTimeout(function(){
+      fetch("https://nominatim.openstreetmap.org/search?q="+encodeURIComponent(q)+"&format=json&limit=5&countrycodes=de,at,ch&addressdetails=1",{headers:{"Accept-Language":"de"}})
+      .then(function(res){return res.json();})
+      .then(function(data){
+        setH(data.map(function(x){
+          var parts=[x.address&&(x.address.city||x.address.town||x.address.village||x.address.county),x.address&&x.address.state].filter(Boolean);
+          return{label:x.display_name,short:parts.join(", "),lat:+x.lat,lon:+x.lon};
+        }));
+      }).catch(function(){setH([]);});
+    },320);
+    return function(){clearTimeout(t.current);};
+  },[q]);
+  return hits;
+}
+
+// ── LocIn Component ───────────────────────────────────────────────────────────
+function LocIn(props){
+  var val=props.val,chg=props.chg,sel=props.sel,ph=props.ph,icon=props.icon;
+  var or=useState(false);var open=or[0],setOpen=or[1];
+  var hits=useNom(val);var ref=useRef(null);
+  useEffect(function(){
+    function h(e){if(ref.current&&!ref.current.contains(e.target))setOpen(false);}
+    document.addEventListener("mousedown",h);
+    return function(){document.removeEventListener("mousedown",h);};
+  },[]);
+  return React.createElement("div",{ref:ref,className:"acwrap"},
+    React.createElement("div",{style:{position:"relative"}},
+      React.createElement("input",{className:"inp",value:val,
+        onChange:function(e){chg(e.target.value);setOpen(true);},
+        onFocus:function(){setOpen(true);},placeholder:ph,autoComplete:"off",
+        style:{paddingRight:"34px"}}),
+      React.createElement("span",{style:{position:"absolute",right:"11px",top:"50%",transform:"translateY(-50%)",opacity:0.35,fontSize:"14px",pointerEvents:"none"}},icon)
+    ),
+    open&&hits.length>0&&val.length>=2&&React.createElement("div",{className:"drop"},
+      hits.map(function(h,i){
+        return React.createElement("div",{key:i,className:"ditem",onMouseDown:function(){sel(h);setOpen(false);}},
+          React.createElement("div",{className:"dmain"},h.short||h.label.split(",")[0]),
+          React.createElement("div",{className:"dsub"},h.label)
+        );
+      })
+    )
+  );
+}
+
+// ── PriceBlock with working-time dropdown ─────────────────────────────────────
+function PriceBlock(props){
+  var id=props.id,icon=props.icon,label=props.label,prices=props.prices,onChange=props.onChange;
+  var p=prices[id]||{};
+  function set(leg,field,v){onChange(id,leg,field,v);}
+  var legs=[["hin","↗ Hinreise"],["rueck","↙ Rückreise"]];
+  var timeFields=[["dep","time","Abfahrt","08:00"],["arr","time","Ankunft","11:00"],["price","number","Preis €","—"]];
+
+  return React.createElement("div",{className:"tblock"},
+    React.createElement("div",{className:"tblock-hdr"},
+      React.createElement("span",{style:{fontSize:"20px"}},icon),
+      React.createElement("span",{style:{fontSize:"14px",fontWeight:700}},label)
+    ),
+    legs.map(function(legArr){
+      var leg=legArr[0],lbl=legArr[1];
+      var pLeg=p[leg]||{};
+      var durationMin=tDiffMin(pLeg.dep,pLeg.arr);
+      var workOpts=buildWorkOptions(durationMin);
+      var curWork=parseInt(pLeg.work)||0;
+      return React.createElement("div",{key:leg,style:{marginBottom:leg==="hin"?"16px":"0"}},
+        React.createElement("div",{className:"tleg-lbl"},lbl),
+        React.createElement("div",{className:"g3"},
+          timeFields.map(function(fArr){
+            var f=fArr[0],type=fArr[1],lbl2=fArr[2],placeholder=fArr[3];
+            return React.createElement("div",{key:f},
+              React.createElement("div",{className:"flbl"},lbl2),
+              React.createElement("input",{className:"inpsm",type:type,placeholder:placeholder,
+                min:type==="number"?"0":undefined,step:type==="number"?"0.01":undefined,
+                value:pLeg[f]||"",onChange:function(e){set(leg,f,e.target.value);}})
+            );
+          })
+        ),
+        // Working time dropdown (only shown when duration is known)
+        durationMin>0&&React.createElement("div",{style:{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},
+          React.createElement("span",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700}},
+            "💼 Arbeitszeit während der Fahrt:"
+          ),
+          React.createElement("select",{className:"inp",
+            style:{padding:"6px 30px 6px 10px",fontSize:"12px",width:"auto",minWidth:"130px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
+            value:pLeg.work||"0",
+            onChange:function(e){set(leg,"work",e.target.value);}},
+            workOpts.map(function(o){
+              return React.createElement("option",{key:o.v,value:String(o.v)},o.l);
+            })
+          ),
+          durationMin>0&&React.createElement("span",{style:{fontSize:"11px",color:"var(--muted)"}},
+            "(max. "+durStr(durationMin)+")"
+          )
+        )
+      );
+    }),
+    // ── Bahn: Sitzplatzreservierung checkboxes ──────────────────────────────
+    id==="bahn"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"4px",paddingTop:"12px"}},
+      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🎫 Sitzplatzreservierung (je "+fEur(SEAT_PRICE)+"/Fahrt)"),
+      React.createElement("label",{className:"cb-row"+(props.seatHin?" checked":""),
+        onClick:function(e){e.preventDefault();props.onSeatHin(!props.seatHin);}},
+        React.createElement("input",{type:"checkbox",checked:props.seatHin,onChange:function(){},onClick:function(e){e.stopPropagation();props.onSeatHin(!props.seatHin);}}),
+        React.createElement("div",null,
+          React.createElement("div",{className:"cb-label"},"↗ Hinreise"),
+          React.createElement("div",{className:"cb-note"},"Sitzplatz reservieren")
+        ),
+        React.createElement("span",{className:"cb-price"},props.seatHin?fEur(SEAT_PRICE):"—")
+      ),
+      React.createElement("label",{className:"cb-row"+(props.seatRueck?" checked":""),
+        onClick:function(e){e.preventDefault();props.onSeatRueck(!props.seatRueck);}},
+        React.createElement("input",{type:"checkbox",checked:props.seatRueck,onChange:function(){},onClick:function(e){e.stopPropagation();props.onSeatRueck(!props.seatRueck);}}),
+        React.createElement("div",null,
+          React.createElement("div",{className:"cb-label"},"↙ Rückreise"),
+          React.createElement("div",{className:"cb-note"},"Sitzplatz reservieren")
+        ),
+        React.createElement("span",{className:"cb-price"},props.seatRueck?fEur(SEAT_PRICE):"—")
+      )
+    ),
+    // ── Flug: Gepäck checkboxes ──────────────────────────────────────────────
+    id==="flug"&&React.createElement("div",{style:{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:"4px",paddingTop:"12px"}},
+      React.createElement("div",{className:"flbl",style:{marginBottom:"8px"}},"🧳 Gepäck aufgeben (je "+fEur(BAGGAGE_PRICE)+"/Flug)"),
+      React.createElement("label",{className:"cb-row"+(props.baggageHin?" checked":""),
+        onClick:function(e){e.preventDefault();props.onBaggageHin(!props.baggageHin);}},
+        React.createElement("input",{type:"checkbox",checked:props.baggageHin,onChange:function(){},onClick:function(e){e.stopPropagation();props.onBaggageHin(!props.baggageHin);}}),
+        React.createElement("div",null,
+          React.createElement("div",{className:"cb-label"},"↗ Hinflug"),
+          React.createElement("div",{className:"cb-note"},"Aufgegebenes Gepäck")
+        ),
+        React.createElement("span",{className:"cb-price"},props.baggageHin?fEur(BAGGAGE_PRICE):"—")
+      ),
+      React.createElement("label",{className:"cb-row"+(props.baggageRueck?" checked":""),
+        onClick:function(e){e.preventDefault();props.onBaggageRueck(!props.baggageRueck);}},
+        React.createElement("input",{type:"checkbox",checked:props.baggageRueck,onChange:function(){},onClick:function(e){e.stopPropagation();props.onBaggageRueck(!props.baggageRueck);}}),
+        React.createElement("div",null,
+          React.createElement("div",{className:"cb-label"},"↙ Rückflug"),
+          React.createElement("div",{className:"cb-note"},"Aufgegebenes Gepäck")
+        ),
+        React.createElement("span",{className:"cb-price"},props.baggageRueck?fEur(BAGGAGE_PRICE):"—")
+      )
+    )
+  );
+}
+
+// ── Auto block with working time ──────────────────────────────────────────────
+function AutoBlock(props){
+  var autoKosten=props.autoKosten,setAutoKosten=props.setAutoKosten;
+  var autoKm=props.autoKm;
+  var workHin=props.workHin,setWorkHin=props.setWorkHin;
+  var workRueck=props.workRueck,setWorkRueck=props.setWorkRueck;
+  var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
+  var workOpts=buildWorkOptions(fahrtMin);
+
+  return React.createElement("div",{className:"tblock"},
+    React.createElement("div",{className:"tblock-hdr"},
+      React.createElement("span",{style:{fontSize:"20px"}},"🚗"),
+      React.createElement("span",{style:{fontSize:"14px",fontWeight:700}},"Auto")
+    ),
+    React.createElement("div",{className:"flbl"},"Gesamtkosten Hin + Rück (€)"),
+    React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"0.01",
+      placeholder:"z.B. 84.00  (0 = Firmenwagen / kostenlos)",
+      value:autoKosten,onChange:function(e){setAutoKosten(e.target.value);},
+      style:{maxWidth:"300px"}}),
+    autoKm&&React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"5px"}},
+      "Geschätzte Strecke: ~"+autoKm+" km · Fahrzeit: ca. "+durStr(fahrtMin)
+    ),
+    // Working time for auto
+    fahrtMin>0&&React.createElement("div",{style:{marginTop:"14px"}},
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Hinreise"),
+          React.createElement("select",{className:"inp",
+            style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
+            value:workHin,onChange:function(e){setWorkHin(e.target.value);}},
+            workOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
+          )
+        ),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:"11px",color:"var(--purple)",fontWeight:700,marginBottom:"5px"}},"💼 Arbeitszeit Rückreise"),
+          React.createElement("select",{className:"inp",
+            style:{padding:"6px 30px 6px 10px",fontSize:"12px",color:"var(--purple)",background:"rgba(167,139,250,0.08)",borderColor:"rgba(167,139,250,0.3)"},
+            value:workRueck,onChange:function(e){setWorkRueck(e.target.value);}},
+            workOpts.map(function(o){return React.createElement("option",{key:o.v,value:String(o.v)},o.l);})
+          )
+        )
+      )
+    )
+  );
+}
+
+// ── Result Card ───────────────────────────────────────────────────────────────
+function RCard(props){
+  var item=props.item,isBest=props.isBest,idx=props.idx;
+  var bw=Math.max(5,Math.min(100,100-(item.score/15)*100));
+  var barColor=isBest?"linear-gradient(90deg,#fbbf24,#f59e0b)":(bw>60?"#34d399":"#94a3b8");
+
+  // total travel time
+  var totalMin=(item.durationHin||0)+(item.durationRueck||0);
+  var totalStr=totalMin>0?durStr(totalMin):"—";
+
+  // combined working time
+  var workTotal=(item.workHinMin||0)+(item.workRueckMin||0);
+
+  return React.createElement("div",{
+    className:"rcard"+(isBest?" best":""),
+    style:{animationDelay:(idx*80)+"ms"}
+  },
+    isBest&&React.createElement("div",{className:"bestbadge"},"★ BESTE WAHL"),
+
+    // Header
+    React.createElement("div",{className:"rcard-hdr"},
+      React.createElement("div",{className:"ricon "+(isBest?"b":"n")},item.icon),
+      React.createElement("div",null,
+        React.createElement("span",{className:"rname"},item.label),
+        React.createElement("span",{className:"rbadge "+item.badgeCls},item.badge)
+      )
+    ),
+
+    // Key numbers
+    React.createElement("div",{className:"rnums"},
+      React.createElement("div",null,
+        React.createElement("div",{className:"rnl"},"Gesamtkosten"),
+        React.createElement("div",{className:"rnv lg",style:{color:isBest?"var(--gold)":"var(--text)"}},fEurR(item.total)),
+        React.createElement("div",{className:"rns"},item.costDetail)
+      ),
+      item.hotel>0&&React.createElement("div",null,
+        React.createElement("div",{className:"rnl"},"Hotel"),
+        React.createElement("div",{className:"rnv",style:{color:"var(--orange)"}},"+"+fEurR(item.hotel)),
+        React.createElement("div",{className:"rns"},item.nights+" Übernachtung"+(item.nights>1?"en":""))
+      ),
+      item.extras>0&&React.createElement("div",null,
+        React.createElement("div",{className:"rnl"},"Extras"),
+        React.createElement("div",{className:"rnv",style:{color:"var(--gold)"}},"+"+fEur(item.extras)),
+        React.createElement("div",{className:"rns"},
+          [item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",
+           item.baggageHin&&"🧳 Gepäck Hin",item.baggageRueck&&"🧳 Gepäck Rück"]
+          .filter(Boolean).join(" · ")
+        )
+      )
+    ),
+
+    // Total travel time — highlighted
+    totalMin>0&&React.createElement("div",{className:"total-time-row"},
+      React.createElement("span",{style:{fontSize:"16px"}},"⏱"),
+      React.createElement("div",null,
+        React.createElement("div",{className:"total-time-lbl"},"Gesamtreisezeit (Hin + Rück)"),
+        React.createElement("div",{className:"total-time-val"},totalStr)
+      ),
+      item.durationHin>0&&React.createElement("div",{style:{marginLeft:"auto",fontSize:"12px",color:"var(--muted)",textAlign:"right",lineHeight:"1.6"}},
+        "↗ Hin: "+durStr(item.durationHin),React.createElement("br"),
+        item.durationRueck>0?"↙ Rück: "+durStr(item.durationRueck):""
+      )
+    ),
+
+    // Exact times block
+    item.showTimes&&React.createElement("div",{className:"times-block"},
+      React.createElement("div",{className:"times-row"},
+        React.createElement("span",{className:"times-leg"},"↗ Hinreise"),
+        React.createElement("span",{className:"times-val"},item.hinDep&&item.hinArr?item.hinDep+" → "+item.hinArr+(item.hinDur?" ("+durStr(item.hinDur)+")"):"")
+      ),
+      React.createElement("div",{className:"times-row"},
+        React.createElement("span",{className:"times-leg"},"↙ Rückreise"),
+        React.createElement("span",{className:"times-val"},item.rueckDep&&item.rueckArr?item.rueckDep+" → "+item.rueckArr+(item.rueckDur?" ("+durStr(item.rueckDur)+")"):item.rueckDep?item.rueckDep+" Abfahrt":"")
+      )
+    ),
+
+    // Working time
+    workTotal>0&&React.createElement("div",{className:"work-row"},
+      React.createElement("span",{className:"work-icon"},"💼"),
+      React.createElement("span",{className:"work-lbl"},"Produktive Reisezeit gesamt:"),
+      React.createElement("span",{className:"work-val"},durStr(workTotal)),
+      item.workHinMin>0&&item.workRueckMin>0&&React.createElement("span",{style:{fontSize:"11px",color:"var(--muted)",marginLeft:"6px"}},
+        "(Hin: "+durStr(item.workHinMin)+" / Rück: "+durStr(item.workRueckMin)+")"
+      )
+    ),
+
+    // Efficiency bar
+    React.createElement("div",{className:"sbar"},
+      React.createElement("div",{className:"sbarlbl"},"Effizienz-Score"),
+      React.createElement("div",{className:"sbartr"},
+        React.createElement("div",{className:"sbarfi",style:{width:bw+"%",background:barColor}})
+      )
+    ),
+
+    item.detail&&React.createElement("div",{className:"rdetail"},item.detail)
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────────────────────
+function App(){
+  var r1=useState("form");     var sc=r1[0],setSc=r1[1];
+  var r2=useState("");         var sT=r2[0],setST=r2[1];
+  var r3=useState("");         var zT=r3[0],setZT=r3[1];
+  var r4=useState(null);       var sG=r4[0],setSG=r4[1];
+  var r5=useState(null);       var zG=r5[0],setZG=r5[1];
+  var r6=useState("");         var hD=r6[0],setHD=r6[1];
+  var r7=useState("10:00");    var hT=r7[0],setHT=r7[1];
+  var r8=useState("");         var rD=r8[0],setRD=r8[1];
+  var r9=useState("17:00");    var rT=r9[0],setRT=r9[1];
+  var r10=useState("");        var autoKosten=r10[0],setAutoKosten=r10[1];
+  var r11=useState("0");       var autoWorkHin=r11[0],setAutoWorkHin=r11[1];
+  var r12=useState("0");       var autoWorkRueck=r12[0],setAutoWorkRueck=r12[1];
+  var r13=useState(100);       var hotelPrice=r13[0],setHotelPrice=r13[1];
+  var r14=useState({});        var prices=r14[0],setPrices=r14[1];
+  var r15=useState([]);        var results=r15[0],setResults=r15[1];
+  var r16=useState("");        var err=r16[0],setErr=r16[1];
+  var r17=useState(null);      var printedAt=r17[0],setPrintedAt=r17[1];
+  // Extras: seat reservation (bahn) + baggage (flug)
+  // seatHin, seatRueck = bahn seat checkboxes; baggageHin, baggageRueck = flug baggage
+  var r18=useState(false); var seatHin=r18[0],setSeatHin=r18[1];
+  var r19=useState(false); var seatRueck=r19[0],setSeatRueck=r19[1];
+  var r20=useState(false); var baggageHin=r20[0],setBaggageHin=r20[1];
+  var r21=useState(false); var baggageRueck=r21[0],setBaggageRueck=r21[1];
+
+  var nights=calcNights(hD,rD);
+  var hotelTotal=nights>0?nights*hotelPrice:0;
+
+  var autoKm=useMemo(function(){
+    if(!sG||!zG)return null;
+    return Math.round(haversineKm(sG.lat,sG.lon,zG.lat,zG.lon)*ROAD_FAC);
+  },[sG,zG]);
+
+  var TRANS=[{id:"bahn",icon:"🚆",label:"Deutsche Bahn"},{id:"flug",icon:"✈️",label:"Flug + Transfer"}];
+
+  function setP(id,leg,field,val){
+    setPrices(function(prev){
+      var next=Object.assign({},prev);
+      next[id]=Object.assign({},next[id]);
+      next[id][leg]=Object.assign({},next[id][leg]);
+      next[id][leg][field]=val;
+      return next;
+    });
+  }
+
+  function step1(){
+    if(!sT||!zT||!hD||!rD){setErr("Bitte alle Felder ausfüllen.");return;}
+    if(!sG||!zG){setErr("Bitte Orte aus der Vorschlagsliste wählen (↓).");return;}
+    setErr("");setSc("links");
+  }
+
+  function calcRes(){
+    var items=[];
+
+    // Auto
+    var aK=parseFloat(autoKosten);
+    if(!isNaN(aK)&&autoKosten!==""){
+      var fahrtMin=autoKm?Math.round(autoKm/CAR_SPEED*60):0;
+      var autoTotal=aK+hotelTotal;
+      var arrTime=hT&&fahrtMin?addMinutes(hT,-(fahrtMin%1440)):"";
+      // For auto: departure = arrival minus drive time on outbound; return departure = rT
+      var hinDep=hT&&fahrtMin?addMinutes(hT,-(fahrtMin)):hT;
+      var rueckArr=rT&&fahrtMin?addMinutes(rT,fahrtMin):rT;
+      items.push({
+        id:"auto",icon:"🚗",label:"Auto",
+        total:autoTotal,hotel:hotelTotal,nights:nights,
+        durationHin:fahrtMin,durationRueck:fahrtMin,
+        workHinMin:parseInt(autoWorkHin)||0,
+        workRueckMin:parseInt(autoWorkRueck)||0,
+        showTimes:fahrtMin>0,
+        hinDep:hinDep,hinArr:hT,hinDur:fahrtMin,
+        rueckDep:rT,rueckArr:rueckArr,rueckDur:fahrtMin,
+        costDetail:fEur(aK)+" Fahrt"+(hotelTotal>0?" + "+fEurR(hotelTotal)+" Hotel":""),
+        badge:nights>0?"Mit Übernachtung":"Gleichtag",
+        badgeCls:nights>0?"rbo":"rbg",
+        score:autoTotal/20+fahrtMin/60,
+        detail:"Autokosten: "+fEur(aK)+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+fEur(hotelPrice)+" = "+fEurR(hotelTotal)+".":"")
+      });
+    }
+
+    // Bahn / Flug
+    TRANS.forEach(function(t){
+      var p=prices[t.id];if(!p)return;
+      var hP=parseFloat((p.hin&&p.hin.price)||0)||0;
+      var rP=parseFloat((p.rueck&&p.rueck.price)||0)||0;
+      if(hP===0&&rP===0)return;
+      var dm=tDiffMin(p.hin&&p.hin.dep,p.hin&&p.hin.arr);
+      var dmR=tDiffMin(p.rueck&&p.rueck.dep,p.rueck&&p.rueck.arr);
+      var transport=hP+rP;
+      // Extras
+      var seatExtra=t.id==="bahn"?(seatHin?SEAT_PRICE:0)+(seatRueck?SEAT_PRICE:0):0;
+      var baggageExtra=t.id==="flug"?(baggageHin?BAGGAGE_PRICE:0)+(baggageRueck?BAGGAGE_PRICE:0):0;
+      var extras=seatExtra+baggageExtra;
+      var total=transport+extras+hotelTotal;
+      var wH=parseInt((p.hin&&p.hin.work)||0)||0;
+      var wR=parseInt((p.rueck&&p.rueck.work)||0)||0;
+      var extrasDetail="";
+      if(seatExtra>0) extrasDetail+=" + "+fEur(seatExtra)+" Sitzplatz";
+      if(baggageExtra>0) extrasDetail+=" + "+fEur(baggageExtra)+" Gepäck";
+      items.push({
+        id:t.id,icon:t.icon,label:t.label,
+        total:total,hotel:hotelTotal,nights:nights,extras:extras,
+        seatHin:t.id==="bahn"&&seatHin,seatRueck:t.id==="bahn"&&seatRueck,
+        baggageHin:t.id==="flug"&&baggageHin,baggageRueck:t.id==="flug"&&baggageRueck,
+        durationHin:dm,durationRueck:dmR,
+        workHinMin:wH,workRueckMin:wR,
+        showTimes:!!(p.hin&&p.hin.dep),
+        hinDep:p.hin&&p.hin.dep,hinArr:p.hin&&p.hin.arr,hinDur:dm,
+        rueckDep:p.rueck&&p.rueck.dep,rueckArr:p.rueck&&p.rueck.arr,rueckDur:dmR,
+        costDetail:fEur(transport)+extrasDetail+(hotelTotal>0?" + "+fEurR(hotelTotal)+" Hotel":""),
+        badge:t.id==="bahn"?"Sparpreis":"Flug",
+        badgeCls:t.id==="bahn"?"rbg":"rbm",
+        score:total/20+(dm||120)/60,
+        detail:"Hin: "+fEur(hP)+" · Rück: "+fEur(rP)+(extrasDetail?". Extras:"+extrasDetail:"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+fEur(hotelPrice)+" = "+fEurR(hotelTotal)+".":"")
+      });
+    });
+
+    if(!items.length){setErr("Bitte mindestens einen Preis eintragen.");return;}
+    items.sort(function(a,b){return a.score-b.score;});
+    setPrintedAt(new Date());
+    setResults(items);setErr("");setSc("results");
+  }
+
+  var stepIdx={form:0,links:1,prices:2,results:3}[sc]||0;
+  var stepLabels=["Eingabe","Omio öffnen","Preise","Ergebnis"];
+
+  // ── Timestamp string ──────────────────────────────────────────────────────
+  var tsStr=printedAt?printedAt.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})+" um "+printedAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"";
+
+  return React.createElement(React.Fragment,null,
+
+    // ── Header
+    React.createElement("div",{className:"hdr"},
+      React.createElement("div",{className:"badge"},React.createElement("div",{className:"pulse"}),"100 % KOSTENLOS · KEINE REGISTRIERUNG"),
+      React.createElement("h1",null,"Dienstreise",React.createElement("br"),React.createElement("span",null,"clever planen.")),
+      React.createElement("p",{className:"sub"},"3 Schritte zum besten Reisevergleich.")
+    ),
+
+    // ── Step dots
+    React.createElement("div",{className:"steps"},
+      stepLabels.map(function(s,i){
+        var cls="sdot"+(i<stepIdx?" done":i===stepIdx?" active":"");
+        return React.createElement(React.Fragment,{key:s},
+          i>0&&React.createElement("div",{className:"sline"}),
+          React.createElement("div",{className:cls,title:s})
+        );
+      })
+    ),
+
+    // ════════════════════════════════════════════
+    // SCREEN 1 – FORM
+    // ════════════════════════════════════════════
+    sc==="form"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
+
+      React.createElement("div",{className:"card"},
+        React.createElement("div",{className:"ctitle"},
+          React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),
+          "Route"
+        ),
+        React.createElement("div",{className:"stk"},
+          React.createElement("div",null,
+            React.createElement("div",{className:"flbl"},"Startort"),
+            React.createElement(LocIn,{val:sT,chg:function(v){setST(v);setSG(null);},sel:function(h){setST(h.short||h.label.split(",")[0]);setSG(h);},ph:"Startort eingeben…",icon:"📍"})
+          ),
+          React.createElement("div",{className:"div-row"},
+            React.createElement("div",{className:"divl"}),
+            React.createElement("button",{className:"swapbtn",onClick:function(){setST(zT);setZT(sT);setSG(zG);setZG(sG);}},"⇅"),
+            React.createElement("div",{className:"divl"})
+          ),
+          React.createElement("div",null,
+            React.createElement("div",{className:"flbl"},"Zielort"),
+            React.createElement(LocIn,{val:zT,chg:function(v){setZT(v);setZG(null);},sel:function(h){setZT(h.short||h.label.split(",")[0]);setZG(h);},ph:"Zielort eingeben…",icon:"🎯"})
+          )
+        )
+      ),
+
+      React.createElement("div",{className:"card"},
+        React.createElement("div",{className:"ctitle"},
+          React.createElement("div",{className:"cdot",style:{background:"var(--gold)"}}),
+          "↗ Hinreise – gewünschte Ankunft"
+        ),
+        React.createElement("div",{className:"g2"},
+          React.createElement("div",null,React.createElement("div",{className:"flbl"},"Datum"),React.createElement("input",{className:"inp",type:"date",value:hD,onChange:function(e){setHD(e.target.value);}})),
+          React.createElement("div",null,React.createElement("div",{className:"flbl"},"Uhrzeit (Ankunft)"),React.createElement("input",{className:"inp",type:"time",value:hT,onChange:function(e){setHT(e.target.value);}}))
+        )
+      ),
+
+      React.createElement("div",{className:"card"},
+        React.createElement("div",{className:"ctitle"},
+          React.createElement("div",{className:"cdot",style:{background:"var(--blue)"}}),
+          "↙ Rückreise – geplante Abfahrt"
+        ),
+        React.createElement("div",{className:"g2"},
+          React.createElement("div",null,React.createElement("div",{className:"flbl"},"Datum"),React.createElement("input",{className:"inp",type:"date",value:rD,onChange:function(e){setRD(e.target.value);}})),
+          React.createElement("div",null,React.createElement("div",{className:"flbl"},"Uhrzeit (Abfahrt)"),React.createElement("input",{className:"inp",type:"time",value:rT,onChange:function(e){setRT(e.target.value);}}))
+        )
+      ),
+
+      nights>0&&React.createElement("div",{className:"hotel-box"},
+        React.createElement("div",{className:"ctitle",style:{marginBottom:"10px"}},
+          React.createElement("div",{className:"cdot",style:{background:"var(--orange)"}}),
+          "🏨 Hotel – automatisch erkannt"
+        ),
+        React.createElement("div",{className:"hotel-row"},
+          React.createElement("div",{className:"hotel-chip"},nights+" Übernachtung"+(nights>1?"en":"")),
+          React.createElement("span",{style:{color:"var(--muted)"}},"×"),
+          React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",value:hotelPrice,onChange:function(e){setHotelPrice(parseFloat(e.target.value)||0);},style:{maxWidth:"90px"}}),
+          React.createElement("span",{style:{fontSize:"12px",color:"var(--muted)"}},"€ / Nacht"),
+          React.createElement("div",{style:{marginLeft:"auto",fontSize:"18px",fontWeight:700,fontFamily:"'DM Mono',monospace",color:"var(--orange)"}},"= "+fEurR(hotelTotal))
+        ),
+        React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)",marginTop:"7px"}},"Wird zu allen Reiseoptionen addiert. Preis anpassbar.")
+      ),
+
+      err&&React.createElement("div",{className:"err"},"⚠ "+err),
+      React.createElement("button",{className:"btnp",onClick:step1},"Weiter → Preise suchen")
+    ),
+
+    // ════════════════════════════════════════════
+    // SCREEN 2 – OMIO
+    // ════════════════════════════════════════════
+    sc==="links"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
+      React.createElement("button",{className:"backbtn",onClick:function(){setSc("form");}},"← Zurück"),
+      React.createElement("div",{className:"rpill"},
+        React.createElement("strong",null,sT),React.createElement("span",{className:"rarrow"},"⇄"),React.createElement("strong",null,zT),
+        React.createElement("span",{className:"rmeta"},"Hin: "+fDateTime(hD,hT)+" · Rück: "+fDateTime(rD,rT))
+      ),
+      nights>0&&React.createElement("div",{className:"hotel-box",style:{marginBottom:"14px"}},
+        React.createElement("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"4px"}},
+          "🏨 "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+fEur(hotelPrice)+" = ",
+          React.createElement("span",{style:{color:"var(--orange)"}},fEurR(hotelTotal))
+        ),
+        React.createElement("div",{style:{fontSize:"11px",color:"var(--muted)"}},"Wird automatisch zu allen Optionen addiert.")
+      ),
+      React.createElement("div",{className:"slbl"},"Preise nachschlagen"),
+      React.createElement("div",{className:"hint"},
+        "Klicken Sie auf \"Bei Omio suchen\" und geben Sie dort ",
+        React.createElement("strong",null,"Start, Ziel und Datum"),
+        " ein. Notieren Sie Preise, Abfahrts- und Ankunftszeiten für Hin- und Rückreise."
+      ),
+      React.createElement("a",{className:"btn-omio",href:"https://www.omio.at",target:"_blank",rel:"noopener noreferrer"},"👉 Bei Omio suchen ↗"),
+      React.createElement("button",{className:"btnp",onClick:function(){setSc("prices");}},"Preise eintragen →")
+    ),
+
+    // ════════════════════════════════════════════
+    // SCREEN 3 – PRICE ENTRY
+    // ════════════════════════════════════════════
+    sc==="prices"&&React.createElement("div",{style:{animation:"fadeIn 0.4s ease"}},
+      React.createElement("button",{className:"backbtn",onClick:function(){setSc("links");}},"← Zurück"),
+      React.createElement("div",{className:"rpill"},
+        React.createElement("strong",null,sT),React.createElement("span",{className:"rarrow"},"⇄"),React.createElement("strong",null,zT)
+      ),
+      React.createElement("div",{className:"slbl"},"Preise & Zeiten eintragen"),
+      React.createElement("p",{style:{fontSize:"13px",color:"var(--muted)",marginBottom:"14px",lineHeight:"1.6"}},
+        "Tragen Sie Preise, Abfahrts- und Ankunftszeiten aus Omio ein. Felder leer lassen = Option wird nicht verglichen."
+      ),
+
+      React.createElement(AutoBlock,{
+        autoKosten:autoKosten,setAutoKosten:setAutoKosten,
+        autoKm:autoKm,
+        workHin:autoWorkHin,setWorkHin:setAutoWorkHin,
+        workRueck:autoWorkRueck,setWorkRueck:setAutoWorkRueck
+      }),
+
+      TRANS.map(function(t){
+        return React.createElement(PriceBlock,{key:t.id,id:t.id,icon:t.icon,label:t.label,prices:prices,onChange:setP,
+          seatHin:seatHin,seatRueck:seatRueck,onSeatHin:setSeatHin,onSeatRueck:setSeatRueck,
+          baggageHin:baggageHin,baggageRueck:baggageRueck,onBaggageHin:setBaggageHin,onBaggageRueck:setBaggageRueck
+        });
+      }),
+
+      nights>0&&React.createElement("div",{className:"hotel-box"},
+        React.createElement("div",{className:"ctitle",style:{marginBottom:"10px"}},
+          React.createElement("div",{className:"cdot",style:{background:"var(--orange)"}}),
+          "🏨 Hotel – wird automatisch addiert"
+        ),
+        React.createElement("div",{className:"hotel-row"},
+          React.createElement("div",{className:"hotel-chip"},nights+" Übernachtung"+(nights>1?"en":"")),
+          React.createElement("span",{style:{color:"var(--muted)"}},"×"),
+          React.createElement("input",{className:"inpsm",type:"number",min:"0",step:"1",value:hotelPrice,onChange:function(e){setHotelPrice(parseFloat(e.target.value)||0);},style:{maxWidth:"90px"}}),
+          React.createElement("span",{style:{fontSize:"12px",color:"var(--muted)"}},"€ / Nacht"),
+          React.createElement("div",{style:{marginLeft:"auto",fontSize:"18px",fontWeight:700,fontFamily:"'DM Mono',monospace",color:"var(--orange)"}},"= "+fEurR(hotelTotal))
+        )
+      ),
+
+      err&&React.createElement("div",{className:"err"},"⚠ "+err),
+      React.createElement("div",{style:{height:"6px"}}),
+      React.createElement("button",{className:"btnp",onClick:calcRes},"Günstigste Option berechnen →")
+    ),
+
+    // ════════════════════════════════════════════
+    // SCREEN 4 – RESULTS
+    // ════════════════════════════════════════════
+    sc==="results"&&results.length>0&&React.createElement("div",{style:{animation:"fadeIn 0.35s ease"}},
+
+      // Print-only header
+      React.createElement("div",{className:"print-header"},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:"18pt",fontWeight:700,color:"#111"}},"Reisekostenvergleich"),
+            React.createElement("div",{style:{fontSize:"11pt",color:"#555",marginTop:"3px"}},sT+" ↔ "+zT)
+          ),
+          React.createElement("div",{style:{textAlign:"right",fontSize:"10pt",color:"#555"}},
+            React.createElement("div",null,"Hinreise: "+fDateTime(hD,hT)),
+            React.createElement("div",null,"Rückreise: "+fDateTime(rD,rT)),
+            nights>0?React.createElement("div",null,nights+" Übernachtung"+(nights>1?"en":"")+" à "+fEur(hotelPrice)):null
+          )
+        )
+      ),
+
+      React.createElement("button",{className:"backbtn no-print",onClick:function(){setSc("prices");}},"← Preise anpassen"),
+
+      React.createElement("div",{className:"rpill no-print"},
+        React.createElement("strong",null,sT),React.createElement("span",{className:"rarrow"},"⇄"),React.createElement("strong",null,zT),
+        React.createElement("span",{className:"rmeta"},
+          "Hin: "+fDate(hD)+" · Rück: "+fDate(rD)+(nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":"")
+        )
+      ),
+
+      React.createElement("div",{className:"recom no-print"},
+        React.createElement("span",{style:{fontSize:"20px"}},"💡"),
+        React.createElement("div",{className:"recom-text"},
+          React.createElement("strong",null,"Empfehlung: "),
+          results[0].id==="auto"?"Auto – günstigste Option ("+fEurR(results[0].total)+" gesamt), kein Umsteigen.":
+          results[0].id==="bahn"?"Deutsche Bahn – bestes Preis-Zeit-Verhältnis ("+fEurR(results[0].total)+" gesamt).":
+          "Flug – effizienteste Option ("+fEurR(results[0].total)+" gesamt).",
+          nights>0?" Inkl. "+nights+" Übernachtung"+(nights>1?"en":"")+" ("+fEurR(hotelTotal)+").":""
+        )
+      ),
+
+      results.map(function(r,i){return React.createElement(RCard,{key:r.id,item:r,isBest:i===0,idx:i});}),
+
+      // Print footer
+      React.createElement("div",{className:"print-footer"},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:"6px"}},
+          React.createElement("span",null,"Preise aus Omio · Auto: individuell · Hotel: "+fEur(hotelPrice)+"/Nacht · Adressen via OpenStreetMap"),
+          React.createElement("span",{style:{fontWeight:600}},"Erstellt: "+tsStr)
+        )
+      ),
+
+      // Screen-only footer note
+      React.createElement("div",{className:"no-print",style:{marginTop:"16px",textAlign:"center",fontSize:"11px",color:"#444",lineHeight:1.8}},
+        "Preise aus Omio · Auto: individuell · Hotel: "+fEur(hotelPrice)+"/Nacht"
+      ),
+      React.createElement("div",{style:{height:"12px"}}),
+
+      React.createElement("button",{className:"btn-print no-print",onClick:function(){window.print();}},"🖨 Als PDF speichern / Drucken"),
+      React.createElement("div",{style:{height:"8px"}}),
+      React.createElement("button",{
+        className:"btnp ghost no-print",
+        onClick:function(){setSc("form");setPrices({});setResults([]);setAutoKosten("");setAutoWorkHin("0");setAutoWorkRueck("0");setSeatHin(false);setSeatRueck(false);setBaggageHin(false);setBaggageRueck(false);}
+      },"Neue Suche")
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(React.createElement(App));
+</script>
+</body>
+</html>
