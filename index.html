@@ -141,6 +141,15 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .no-licence-banner{position:absolute;inset:0;border-radius:var(--rs);background:rgba(12,12,20,0.85);backdrop-filter:blur(3px);z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;}
 .no-licence-banner.show{display:flex;}
 .tblock-hdr{display:flex;align-items:center;gap:9px;margin-bottom:13px;}
+.paste-box{background:rgba(96,165,250,0.04);border:1.5px dashed rgba(96,165,250,0.3);border-radius:8px;padding:12px;margin-bottom:12px;}
+.paste-box textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(96,165,250,0.2);border-radius:6px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;padding:8px 10px;resize:vertical;min-height:60px;outline:none;line-height:1.5;}
+.paste-box textarea::placeholder{color:rgba(255,255,255,0.2);font-family:'DM Sans',sans-serif;}
+.paste-box textarea:focus{border-color:rgba(96,165,250,0.5);}
+.btn-parse{padding:7px 14px;border-radius:6px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.3);color:var(--blue);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s;margin-top:8px;}
+.btn-parse:hover{background:rgba(96,165,250,0.22);}
+.parse-result{font-size:11px;margin-top:6px;padding:6px 10px;border-radius:5px;display:none;}
+.parse-result.ok{background:rgba(52,211,153,0.1);color:var(--green);border:1px solid rgba(52,211,153,0.3);}
+.parse-result.err{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
 .tleg-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.07em;}
 
 /* Result cards */
@@ -430,6 +439,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinreise</div>
+      <div class="paste-box">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
+        <textarea id="bahn-hin-paste" placeholder="Verbindungstext aus Omio hier einfügen, z.B.:&#10;München Hbf 08:14 → Berlin Hbf 12:02 · 3h 48min · 29 €"></textarea>
+        <button class="btn-parse" onclick="parseOmio('bahn','hin')">Daten auslesen →</button>
+        <div class="parse-result" id="bahn-hin-parse-result"></div>
+      </div>
       <div class="g3">
         <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-hin-dep"></div>
         <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-hin-arr"></div>
@@ -448,6 +463,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Rück -->
     <div>
       <div class="tleg-lbl">↙ Rückreise</div>
+      <div class="paste-box">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
+        <textarea id="bahn-rueck-paste" placeholder="Verbindungstext aus Omio hier einfügen…"></textarea>
+        <button class="btn-parse" onclick="parseOmio('bahn','rueck')">Daten auslesen →</button>
+        <div class="parse-result" id="bahn-rueck-parse-result"></div>
+      </div>
       <div class="g3">
         <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-rueck-dep"></div>
         <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-rueck-arr"></div>
@@ -477,6 +498,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinflug</div>
+      <div class="paste-box">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
+        <textarea id="flug-hin-paste" placeholder="Verbindungstext aus Omio hier einfügen, z.B.:&#10;Wien 06:30 → Berlin 08:05 · 1h 35min · ab 89 €"></textarea>
+        <button class="btn-parse" onclick="parseOmio('flug','hin')">Daten auslesen →</button>
+        <div class="parse-result" id="flug-hin-parse-result"></div>
+      </div>
       <div class="g3">
         <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-hin-dep"></div>
         <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-hin-arr"></div>
@@ -495,6 +522,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Rück -->
     <div>
       <div class="tleg-lbl">↙ Rückflug</div>
+      <div class="paste-box">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
+        <textarea id="flug-rueck-paste" placeholder="Verbindungstext aus Omio hier einfügen…"></textarea>
+        <button class="btn-parse" onclick="parseOmio('flug','rueck')">Daten auslesen →</button>
+        <div class="parse-result" id="flug-rueck-parse-result"></div>
+      </div>
       <div class="g3">
         <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-rueck-dep"></div>
         <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-rueck-arr"></div>
@@ -1047,6 +1080,84 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
   ["bahn-hin-work-wrap","bahn-rueck-work-wrap","flug-hin-work-wrap","flug-rueck-work-wrap","auto-work-wrap"].forEach(id=>{const el=g(id);if(el)el.style.display="none";});
   showScreen("s-form");
 });
+
+// ── Omio Text Parser ────────────────────────────────────────────────────────
+function parseOmio(transport, leg) {
+  const pasteId = transport + '-' + leg + '-paste';
+  const resultId = transport + '-' + leg + '-parse-result';
+  const text = document.getElementById(pasteId).value.trim();
+  const result = document.getElementById(resultId);
+
+  if (!text) {
+    showParseResult(result, 'err', 'Bitte erst Text einfügen.');
+    return;
+  }
+
+  // ── Time patterns ─────────────────────────────────────────────────────────
+  // Matches: 08:14, 8:14, 08.14, 8.14 (with colon or dot separator)
+  const timeRx = /(\d{1,2})[:\.](\d{2})/g;
+  const times = [];
+  let m;
+  while ((m = timeRx.exec(text)) !== null) {
+    const h = parseInt(m[1]), min = parseInt(m[2]);
+    if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
+      times.push((h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min);
+    }
+  }
+
+  // ── Price patterns ────────────────────────────────────────────────────────
+  // Matches: 29 €, 29€, € 29, EUR 29, ab 29, 29.50 €, 29,50 €
+  const priceRx = /(?:ab\s+|EUR\s*|€\s*)(\d+(?:[.,]\d{1,2})?)|(\d+(?:[.,]\d{1,2})?)\s*(?:€|EUR)/gi;
+  const prices = [];
+  while ((m = priceRx.exec(text)) !== null) {
+    const raw = (m[1] || m[2]).replace(',', '.');
+    const val = parseFloat(raw);
+    if (val > 0 && val < 10000) prices.push(val);
+  }
+
+  const found = [];
+  let depId   = transport + '-' + leg + '-dep';
+  let arrId   = transport + '-' + leg + '-arr';
+  let priceId = transport + '-' + leg + '-price';
+
+  // Fill departure time
+  if (times.length >= 1) {
+    document.getElementById(depId).value = times[0];
+    // Trigger change event so work-sel updates
+    document.getElementById(depId).dispatchEvent(new Event('change'));
+    found.push('Abfahrt: ' + times[0]);
+  }
+
+  // Fill arrival time (second distinct time found)
+  if (times.length >= 2) {
+    // Pick the second distinct time
+    const arr = times.find(function(t){ return t !== times[0]; }) || times[1];
+    document.getElementById(arrId).value = arr;
+    document.getElementById(arrId).dispatchEvent(new Event('change'));
+    found.push('Ankunft: ' + arr);
+  }
+
+  // Fill price (lowest value if multiple found, most likely the fare)
+  if (prices.length >= 1) {
+    const price = Math.min.apply(null, prices);
+    document.getElementById(priceId).value = price.toFixed(2);
+    found.push('Preis: ' + price.toFixed(2).replace('.', ',') + ' €');
+  }
+
+  if (found.length === 0) {
+    showParseResult(result, 'err',
+      'Keine Daten erkannt. Tipp: Kopieren Sie den Text direkt aus der Verbindungszeile bei Omio (z.B. "08:14 → 12:02 · 29 €").');
+  } else {
+    showParseResult(result, 'ok', '✓ Erkannt: ' + found.join(' · '));
+  }
+}
+
+function showParseResult(el, type, msg) {
+  el.className = 'parse-result ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display = 'none'; }, 6000);
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 updateHotelUI();
