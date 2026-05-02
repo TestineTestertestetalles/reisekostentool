@@ -147,7 +147,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .paste-box textarea:focus{border-color:rgba(96,165,250,0.5);}
 .btn-parse{padding:7px 14px;border-radius:6px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.3);color:var(--blue);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s;margin-top:8px;}
 .btn-parse:hover{background:rgba(96,165,250,0.22);}
-.parse-result{font-size:11px;margin-top:6px;padding:6px 10px;border-radius:5px;display:none;}
+.parse-result{font-size:11px;margin-top:6px;padding:6px 10px;border-radius:5px;display:none;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
 .parse-result.ok{background:rgba(52,211,153,0.1);color:var(--green);border:1px solid rgba(52,211,153,0.3);}
 .parse-result.err{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
 .tleg-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.07em;}
@@ -1233,30 +1233,37 @@ function parseOmioCombined(transport) {
     found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
   }
 
-  // ── Preis aufteilen ───────────────────────────────────────────────────────
+  // ── Gesamtpreis anzeigen, Felder leer lassen ────────────────────────────
+  var priceNote = '';
   if (priceMatch) {
     var pax   = parseInt(priceMatch[1]);
     var total = parseFloat(priceMatch[2].replace(',','.'));
-    // Adjust for number of persons in state
-    var pricePerPerson = total / pax;
-    var priceForGroup  = pricePerPerson * state.persons;
-    var pricePerLeg    = isRoundTrip ? (priceForGroup / 2) : priceForGroup;
-
-    document.getElementById(transport+'-hin-price').value   = pricePerLeg.toFixed(2);
-    if (isRoundTrip) {
-      document.getElementById(transport+'-rueck-price').value = pricePerLeg.toFixed(2);
-    }
-
-    var priceNote = 'Preis: '+pricePerLeg.toFixed(2).replace('.',',')+'€/Strecke';
+    // Adjust total for actual group size
+    var totalForGroup = (total / pax) * state.persons;
+    priceNote = '⚠ Gesamtpreis: ' + totalForGroup.toFixed(2).replace('.',',') + ' €';
     if (state.persons !== pax) {
-      priceNote += ' ('+total.toFixed(0)+'€ gesamt ÷ '+pax+' Pax × '+state.persons+' Pax ÷ '+(isRoundTrip?'2':'1')+')';
+      priceNote += ' (umgerechnet für ' + state.persons + ' Person' + (state.persons>1?'en':'') + ')';
     }
-    found.push(priceNote);
+    priceNote += ' — bitte auf Hin- und Rückreise aufteilen';
+    // Clear price fields so user fills them manually
+    document.getElementById(transport+'-hin-price').value   = '';
+    document.getElementById(transport+'-rueck-price').value = '';
+    // Set placeholder to show the total as hint
+    document.getElementById(transport+'-hin-price').placeholder   = totalForGroup.toFixed(2) + ' gesamt';
+    document.getElementById(transport+'-rueck-price').placeholder = totalForGroup.toFixed(2) + ' gesamt';
   }
 
-  var msg = '✓ '+found.join(' · ');
+  var msg = '✓ Zeiten eingetragen: ' + found.join(' · ');
   if (!isRoundTrip && deps.length === 1) msg += ' — nur Hinreise erkannt';
+  if (priceNote) msg += '\n' + priceNote;
   showParseResult(result,'ok',msg);
+  // Show price note separately if it exists (longer duration so user sees it)
+  if (priceNote) {
+    setTimeout(function(){
+      var el = document.getElementById(transport+'-combined-parse-result');
+      if(el) { el.style.display='block'; }
+    }, 100);
+  }
 }
 
 function padTime(t) {
@@ -1265,11 +1272,18 @@ function padTime(t) {
   return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
 }
 
-function showParseResult(el, type, msg) {
+function showParseResult(el, type, msg, duration) {
   el.className = 'parse-result ' + type;
-  el.textContent = msg;
+  // Support newlines in message
+  el.innerHTML = '';
+  var lines = msg.split('\n');
+  lines.forEach(function(line, i) {
+    if (i > 0) el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(line));
+  });
   el.style.display = 'block';
-  setTimeout(function(){ el.style.display = 'none'; }, 8000);
+  var ms = duration || (msg.length > 80 ? 12000 : 8000);
+  setTimeout(function(){ el.style.display = 'none'; }, ms);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
