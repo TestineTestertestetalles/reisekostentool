@@ -436,6 +436,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <!-- BAHN -->
   <div class="tblock">
     <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span></div>
+    <!-- Kombinierter Hin+Rück Parser -->
+    <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
+      <textarea id="bahn-combined-paste" placeholder="Gesamten Omio-Teilen-Text hier einfügen (Hin- UND Rückreise):&#10;&#10;Abreise: Bremen Hbf am 25.5.2026 um 06:44&#10;Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11&#10;Abreise: Stuttgart Hbf am 28.5.2026 um 15:49&#10;Ankunft: Bremen Hbf am 28.5.2026 um 21:14&#10;Aktueller Preis für 1 Reisegast: 160 €" style="min-height:90px"></textarea>
+      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('bahn')">Hin- &amp; Rückreise auslesen →</button>
+      <div class="parse-result" id="bahn-combined-parse-result"></div>
+    </div>
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinreise</div>
@@ -495,6 +502,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <!-- FLUG -->
   <div class="tblock">
     <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span></div>
+    <!-- Kombinierter Hin+Rück Parser -->
+    <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
+      <textarea id="flug-combined-paste" placeholder="Gesamten Omio-Teilen-Text hier einfügen (Hin- UND Rückflug)…" style="min-height:90px"></textarea>
+      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('flug')">Hin- &amp; Rückflug auslesen →</button>
+      <div class="parse-result" id="flug-combined-parse-result"></div>
+    </div>
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinflug</div>
@@ -1170,6 +1184,79 @@ function parseOmio(transport, leg) {
   } else {
     showParseResult(result,'ok','✓ Erkannt (allgemein): ' + found.join(' · '));
   }
+}
+
+function parseOmioCombined(transport) {
+  var pasteId  = transport + '-combined-paste';
+  var resultId = transport + '-combined-parse-result';
+  var text     = document.getElementById(pasteId).value.trim();
+  var result   = document.getElementById(resultId);
+  if (!text) { showParseResult(result,'err','Bitte erst Text einfügen.'); return; }
+
+  // Extract ALL Abreise and Ankunft entries
+  var depRx = /Abreise\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
+  var arrRx = /Ankunft\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
+  var priceRx = /Preis\s+f[üu]r\s+(\d+)\s+Reiseg[ae]st[a-z]*\s*:\s*([\d.,]+)\s*€/i;
+
+  var deps = [], arrs = [], m;
+  while ((m = depRx.exec(text)) !== null)  deps.push({station:m[1].trim(), time:padTime(m[2])});
+  while ((m = arrRx.exec(text)) !== null)  arrs.push({station:m[1].trim(), time:padTime(m[2])});
+  var priceMatch = text.match(priceRx);
+
+  if (deps.length === 0 && arrs.length === 0) {
+    showParseResult(result,'err','Keine strukturierten Omio-Daten erkannt. Format: "Abreise: ... um HH:MM"');
+    return;
+  }
+
+  var found = [];
+  var isRoundTrip = deps.length >= 2 && arrs.length >= 2;
+
+  // ── Hinreise ──────────────────────────────────────────────────────────────
+  if (deps.length >= 1) {
+    document.getElementById(transport+'-hin-dep').value = deps[0].time;
+    document.getElementById(transport+'-hin-dep').dispatchEvent(new Event('change'));
+    found.push('↗ Abfahrt: '+deps[0].time+' ('+deps[0].station+')');
+  }
+  if (arrs.length >= 1) {
+    document.getElementById(transport+'-hin-arr').value = arrs[0].time;
+    document.getElementById(transport+'-hin-arr').dispatchEvent(new Event('change'));
+    found.push('Ankunft: '+arrs[0].time+' ('+arrs[0].station+')');
+  }
+
+  // ── Rückreise ─────────────────────────────────────────────────────────────
+  if (isRoundTrip) {
+    document.getElementById(transport+'-rueck-dep').value = deps[1].time;
+    document.getElementById(transport+'-rueck-dep').dispatchEvent(new Event('change'));
+    found.push('↙ Abfahrt: '+deps[1].time+' ('+deps[1].station+')');
+    document.getElementById(transport+'-rueck-arr').value = arrs[1].time;
+    document.getElementById(transport+'-rueck-arr').dispatchEvent(new Event('change'));
+    found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
+  }
+
+  // ── Preis aufteilen ───────────────────────────────────────────────────────
+  if (priceMatch) {
+    var pax   = parseInt(priceMatch[1]);
+    var total = parseFloat(priceMatch[2].replace(',','.'));
+    // Adjust for number of persons in state
+    var pricePerPerson = total / pax;
+    var priceForGroup  = pricePerPerson * state.persons;
+    var pricePerLeg    = isRoundTrip ? (priceForGroup / 2) : priceForGroup;
+
+    document.getElementById(transport+'-hin-price').value   = pricePerLeg.toFixed(2);
+    if (isRoundTrip) {
+      document.getElementById(transport+'-rueck-price').value = pricePerLeg.toFixed(2);
+    }
+
+    var priceNote = 'Preis: '+pricePerLeg.toFixed(2).replace('.',',')+'€/Strecke';
+    if (state.persons !== pax) {
+      priceNote += ' ('+total.toFixed(0)+'€ gesamt ÷ '+pax+' Pax × '+state.persons+' Pax ÷ '+(isRoundTrip?'2':'1')+')';
+    }
+    found.push(priceNote);
+  }
+
+  var msg = '✓ '+found.join(' · ');
+  if (!isRoundTrip && deps.length === 1) msg += ' — nur Hinreise erkannt';
+  showParseResult(result,'ok',msg);
 }
 
 function padTime(t) {
