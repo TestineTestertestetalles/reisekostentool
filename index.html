@@ -439,20 +439,14 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span><span class="cost-badge" id="bahn-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
-      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
-      <textarea id="bahn-combined-paste" placeholder="Gesamten Omio-Teilen-Text hier einfügen (Hin- UND Rückreise):&#10;&#10;Abreise: Bremen Hbf am 25.5.2026 um 06:44&#10;Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11&#10;Abreise: Stuttgart Hbf am 28.5.2026 um 15:49&#10;Ankunft: Bremen Hbf am 28.5.2026 um 21:14&#10;Aktueller Preis für 1 Reisegast: 160 €" style="min-height:90px"></textarea>
-      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('bahn')">Hin- &amp; Rückreise auslesen →</button>
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (Hin- und/oder Rückreise)</div>
+      <textarea id="bahn-combined-paste" placeholder="Omio-Text einfügen – Hin- UND Rückreise:&#10;Abreise: Bremen Hbf am 25.5.2026 um 06:44&#10;Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11&#10;Abreise: Stuttgart Hbf am 28.5.2026 um 15:49&#10;Ankunft: Bremen Hbf am 28.5.2026 um 21:14&#10;Aktueller Preis für 1 Reisegast: 160 €&#10;&#10;Oder nur Hinreise:&#10;Abreise: Bremen Hbf am 25.5.2026 um 06:44&#10;Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11&#10;Aktueller Preis für 1 Reisegast: 90 €" style="min-height:90px"></textarea>
+      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('bahn')">Zeiten &amp; Preis auslesen →</button>
       <div class="parse-result" id="bahn-combined-parse-result"></div>
     </div>
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinreise</div>
-      <div class="paste-box">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
-        <textarea id="bahn-hin-paste" placeholder="Omio-Teilen-Text hier einfügen, z.B.:&#10;Abreise: Bremen Hbf am 25.5.2026 um 06:44&#10;Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11&#10;Aktueller Preis für 1 Reisegast: 90 €"></textarea>
-        <button class="btn-parse" onclick="parseOmio('bahn','hin')">Daten auslesen →</button>
-        <div class="parse-result" id="bahn-hin-parse-result"></div>
-      </div>
       <div class="g3">
         <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-hin-dep"></div>
         <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-hin-arr"></div>
@@ -471,12 +465,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Rück -->
     <div>
       <div class="tleg-lbl">↙ Rückreise</div>
-      <div class="paste-box">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
-        <textarea id="bahn-rueck-paste" placeholder="Omio-Teilen-Text hier einfügen (gleiche Struktur wie Hinreise)…"></textarea>
-        <button class="btn-parse" onclick="parseOmio('bahn','rueck')">Daten auslesen →</button>
-        <div class="parse-result" id="bahn-rueck-parse-result"></div>
-      </div>
       <div class="g3">
         <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-rueck-dep"></div>
         <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-rueck-arr"></div>
@@ -505,20 +493,14 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span><span class="cost-badge" id="flug-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
-      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (Hin- und/oder Rückflug)</div>
       <textarea id="flug-combined-paste" placeholder="Gesamten Omio-Teilen-Text hier einfügen (Hin- UND Rückflug)…" style="min-height:90px"></textarea>
-      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('flug')">Hin- &amp; Rückflug auslesen →</button>
+      <button class="btn-parse" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--gold)" onclick="parseOmioCombined('flug')">Zeiten &amp; Preis auslesen →</button>
       <div class="parse-result" id="flug-combined-parse-result"></div>
     </div>
     <!-- Hin -->
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinflug</div>
-      <div class="paste-box">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
-        <textarea id="flug-hin-paste" placeholder="Omio-Teilen-Text hier einfügen, z.B.:&#10;Abreise: Wien am 06:30&#10;Ankunft: Berlin am 08:05&#10;Aktueller Preis für 1 Reisegast: 89 €"></textarea>
-        <button class="btn-parse" onclick="parseOmio('flug','hin')">Daten auslesen →</button>
-        <div class="parse-result" id="flug-hin-parse-result"></div>
-      </div>
       <div class="g3">
         <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-hin-dep"></div>
         <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-hin-arr"></div>
@@ -537,12 +519,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <!-- Rück -->
     <div>
       <div class="tleg-lbl">↙ Rückflug</div>
-      <div class="paste-box">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (optional)</div>
-        <textarea id="flug-rueck-paste" placeholder="Omio-Teilen-Text hier einfügen (gleiche Struktur wie Hinreise)…"></textarea>
-        <button class="btn-parse" onclick="parseOmio('flug','rueck')">Daten auslesen →</button>
-        <div class="parse-result" id="flug-rueck-parse-result"></div>
-      </div>
       <div class="g3">
         <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-rueck-dep"></div>
         <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-rueck-arr"></div>
@@ -980,7 +956,65 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
   }
 
   const err=document.getElementById("err-s3");
-  if(!items.length){err.textContent="⚠ Bitte mindestens einen Preis eintragen.";err.classList.add("show");return;}
+  // Validate: need at least one price entered (any transport)
+  // Also check: if bahn or flug has times but no price → warn
+  const bahnHinP = gv("bahn-hin-price"), bahnRueckP = gv("bahn-rueck-price");
+  const flugHinP = gv("flug-hin-price"), flugRueckP = gv("flug-rueck-price");
+  const autoK2 = parseFloat(g("auto-kosten").value);
+  const hasBahnPrice = bahnHinP > 0 || bahnRueckP > 0;
+  const hasFlugPrice = flugHinP > 0 || flugRueckP > 0;
+  const hasAutoPrice = !isNaN(autoK2) && g("auto-kosten").value !== "" && state.hasLicence;
+  if(!items.length && !hasBahnPrice && !hasFlugPrice && !hasAutoPrice){
+    err.textContent="⚠ Bitte bei mindestens einer Option (Auto, Bahn oder Flug) einen Preis eintragen.";
+    err.classList.add("show");return;
+  }
+  // Build cross-mode combo: bahn-hin + flug-rueck or flug-hin + bahn-rueck
+  const bahnHinDep=gs("bahn-hin-dep"), bahnRueckDep=gs("bahn-rueck-dep");
+  const flugHinDep=gs("flug-hin-dep"), flugRueckDep=gs("flug-rueck-dep");
+  // Combo A: Bahn Hin + Flug Rück
+  if(bahnHinP>0 && flugRueckP>0 && bahnHinDep && flugRueckDep){
+    const dmH=tMin(bahnHinDep,gs("bahn-hin-arr")), dmR=tMin(flugRueckDep,gs("flug-rueck-arr"));
+    const trHS=gv("bahn-hin-ts"),trHE=gv("bahn-hin-te"),trRS=gv("flug-rueck-ts"),trRE=gv("flug-rueck-te");
+    const bagR=g("bag-rueck").checked?BAG:0, seatH=g("seat-hin").checked?SEAT:0;
+    const total=bahnHinP+flugRueckP+seatH+bagR+hotelTotal;
+    items.push({
+      id:"kombi-bahn-flug",icon:"🚆✈️",label:"Bahn hin · Flug zurück",
+      total,hotel:hotelTotal,nights,extras:seatH+bagR,
+      dH:dmH+trHS+trHE,dR:dmR+trRS+trRE,wH:0,wR:0,
+      score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
+      badge:"Kombination",badgeCls:"rbm",
+      costDetail:eur(bahnHinP)+" Bahn + "+eur(flugRueckP)+" Flug"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
+      detail:"Hinreise: Bahn ("+eur(bahnHinP)+") · Rückreise: Flug ("+eur(flugRueckP)+")",
+      showTimes:true,
+      trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
+      hinDep:bahnHinDep,hinArr:gs("bahn-hin-arr"),hinDur:dmH,
+      rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR
+    });
+  }
+  // Combo B: Flug Hin + Bahn Rück
+  if(flugHinP>0 && bahnRueckP>0 && flugHinDep && bahnRueckDep){
+    const dmH=tMin(flugHinDep,gs("flug-hin-arr")), dmR=tMin(bahnRueckDep,gs("bahn-rueck-arr"));
+    const trHS=gv("flug-hin-ts"),trHE=gv("flug-hin-te"),trRS=gv("bahn-rueck-ts"),trRE=gv("bahn-rueck-te");
+    const bagH=g("bag-hin").checked?BAG:0, seatR=g("seat-rueck").checked?SEAT:0;
+    const total=flugHinP+bahnRueckP+bagH+seatR+hotelTotal;
+    items.push({
+      id:"kombi-flug-bahn",icon:"✈️🚆",label:"Flug hin · Bahn zurück",
+      total,hotel:hotelTotal,nights,extras:bagH+seatR,
+      dH:dmH+trHS+trHE,dR:dmR+trRS+trRE,wH:0,wR:0,
+      score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
+      badge:"Kombination",badgeCls:"rbm",
+      costDetail:eur(flugHinP)+" Flug + "+eur(bahnRueckP)+" Bahn"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
+      detail:"Hinreise: Flug ("+eur(flugHinP)+") · Rückreise: Bahn ("+eur(bahnRueckP)+")",
+      showTimes:true,
+      trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
+      hinDep:flugHinDep,hinArr:gs("flug-hin-arr"),hinDur:dmH,
+      rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR
+    });
+  }
+  if(!items.length){
+    err.textContent="⚠ Bitte bei mindestens einer Option einen Preis eintragen.";
+    err.classList.add("show");return;
+  }
   err.classList.remove("show");
   items.sort((a,b)=>a.score-b.score);
   renderResults(items);
@@ -993,7 +1027,13 @@ function renderResults(items){
   const pLabel={cost:"Kosten",time:"Reisezeit",balanced:"Kosten & Zeit"}[state.priority];
 
   // Recommendation
-  const recMap={auto:"Auto – günstigste Option ("+eurR(best.total)+" gesamt), kein Umsteigen.",bahn:"Deutsche Bahn – bestes Preis-Zeit-Verhältnis ("+eurR(best.total)+" gesamt).",flug:"Flug – effizienteste Option ("+eurR(best.total)+" gesamt)."};
+  const recMap={
+    auto:"Auto – günstigste Option ("+eurR(best.total)+" gesamt), kein Umsteigen.",
+    bahn:"Deutsche Bahn – bestes Preis-Zeit-Verhältnis ("+eurR(best.total)+" gesamt).",
+    flug:"Flug – effizienteste Option ("+eurR(best.total)+" gesamt).",
+    "kombi-bahn-flug":"Kombination Bahn hin / Flug zurück – bestes Gesamtergebnis ("+eurR(best.total)+").",
+    "kombi-flug-bahn":"Kombination Flug hin / Bahn zurück – bestes Gesamtergebnis ("+eurR(best.total)+")."
+  };
   const nights=calcNights(state.hD,state.rD);
   document.getElementById("recom-text").innerHTML=`<strong>Empfehlung (${pLabel}):</strong> ${recMap[best.id]||""}${nights>0?" Inkl. "+nights+" Übernachtung"+(nights>1?"en":"")+" ("+eurR(nights*state.hotelPrice)+").":""}`;
 
