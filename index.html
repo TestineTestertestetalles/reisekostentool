@@ -1137,6 +1137,16 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
   state.canWorkDuringTravel=false;
   updateHotelUI();updateAutoKmHint();
   ["bahn-hin-work-wrap","bahn-rueck-work-wrap","flug-hin-work-wrap","flug-rueck-work-wrap","auto-work-wrap"].forEach(id=>{const el=g(id);if(el)el.style.display="none";});
+  // Reset price total hints and placeholders
+  ['bahn-hin-price','bahn-rueck-price','flug-hin-price','flug-rueck-price'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    delete el.dataset.priceTotal;
+    el.placeholder='—';
+    el.addEventListener('input', function(){
+      if(id.includes('bahn')) updateBahnBadge(); else updateFlugBadge();
+    });
+  });
   showScreen("s-form");
 });
 
@@ -1278,24 +1288,30 @@ function parseOmioCombined(transport) {
     found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
   }
 
-  // ── Gesamtpreis anzeigen, Felder leer lassen ────────────────────────────
+  // ── Gesamtpreis anzeigen, Differenz-Logik aktivieren ───────────────────
   var priceNote = '';
   if (priceMatch) {
     var pax   = parseInt(priceMatch[1]);
     var total = parseFloat(priceMatch[2].replace(',','.'));
-    // Adjust total for actual group size
     var totalForGroup = (total / pax) * state.persons;
     priceNote = '⚠ Gesamtpreis: ' + totalForGroup.toFixed(2).replace('.',',') + ' €';
     if (state.persons !== pax) {
       priceNote += ' (umgerechnet für ' + state.persons + ' Person' + (state.persons>1?'en':'') + ')';
     }
-    priceNote += ' — bitte auf Hin- und Rückreise aufteilen';
-    // Clear price fields so user fills them manually
-    document.getElementById(transport+'-hin-price').value   = '';
-    document.getElementById(transport+'-rueck-price').value = '';
-    // Set placeholder to show the total as hint
-    document.getElementById(transport+'-hin-price').placeholder   = totalForGroup.toFixed(2) + ' gesamt';
-    document.getElementById(transport+'-rueck-price').placeholder = totalForGroup.toFixed(2) + ' gesamt';
+    priceNote += ' — Hinpreis eintragen → Rückpreis wird automatisch berechnet (und umgekehrt)';
+    // Clear price fields
+    var hinEl   = document.getElementById(transport+'-hin-price');
+    var rueckEl = document.getElementById(transport+'-rueck-price');
+    hinEl.value   = '';
+    rueckEl.value = '';
+    // Store total on elements as data attribute for the mirror logic
+    hinEl.dataset.priceTotal   = totalForGroup.toFixed(2);
+    rueckEl.dataset.priceTotal = totalForGroup.toFixed(2);
+    // Show total as placeholder hint
+    hinEl.placeholder   = 'z.B. ' + (totalForGroup/2).toFixed(0) + ' (Summe: ' + totalForGroup.toFixed(0) + ' €)';
+    rueckEl.placeholder = 'z.B. ' + (totalForGroup/2).toFixed(0) + ' (Summe: ' + totalForGroup.toFixed(0) + ' €)';
+    // Activate price-split mirroring for this transport
+    activatePriceMirror(transport);
   }
 
   var msg = '✓ Zeiten eingetragen: ' + found.join(' · ');
@@ -1309,6 +1325,35 @@ function parseOmioCombined(transport) {
       if(el) { el.style.display='block'; }
     }, 100);
   }
+}
+
+function activatePriceMirror(transport) {
+  var hinEl   = document.getElementById(transport+'-hin-price');
+  var rueckEl = document.getElementById(transport+'-rueck-price');
+  if (!hinEl || !rueckEl) return;
+
+  function calcOther(srcEl, dstEl) {
+    var total = parseFloat(srcEl.dataset.priceTotal);
+    if (isNaN(total) || total <= 0) return;
+    var entered = parseFloat(srcEl.value);
+    if (isNaN(entered) || entered < 0) { dstEl.value = ''; return; }
+    var other = total - entered;
+    if (other < 0) other = 0;
+    dstEl.value = other.toFixed(2);
+    // Trigger badge update
+    if (transport === 'bahn') updateBahnBadge();
+    if (transport === 'flug') updateFlugBadge();
+  }
+
+  // Remove old listeners by cloning (clean approach)
+  var newHin   = hinEl.cloneNode(true);
+  var newRueck = rueckEl.cloneNode(true);
+  hinEl.parentNode.replaceChild(newHin, hinEl);
+  rueckEl.parentNode.replaceChild(newRueck, rueckEl);
+
+  // Re-attach existing badge listeners
+  newHin.addEventListener('input',   function(){ calcOther(newHin, newRueck); updateBahnBadge(); updateFlugBadge(); });
+  newRueck.addEventListener('input', function(){ calcOther(newRueck, newHin); updateBahnBadge(); updateFlugBadge(); });
 }
 
 function padTime(t) {
