@@ -137,6 +137,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
 /* Price block */
 .tblock{background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:16px;margin-bottom:10px;position:relative;}
+.cost-badge{margin-left:auto;font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--gold);background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:20px;padding:3px 10px;transition:all 0.2s;}
 .tblock.disabled-overlay::after{content:'';position:absolute;inset:0;border-radius:var(--rs);background:rgba(12,12,20,0.85);backdrop-filter:blur(3px);z-index:5;display:flex;align-items:center;justify-content:center;}
 .no-licence-banner{position:absolute;inset:0;border-radius:var(--rs);background:rgba(12,12,20,0.85);backdrop-filter:blur(3px);z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;}
 .no-licence-banner.show{display:flex;}
@@ -394,7 +395,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <!-- AUTO -->
   <div class="tblock" style="position:relative">
-    <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span></div>
+    <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span><span class="cost-badge" id="auto-cost-badge">—</span></div>
     <label class="flbl">Gesamtkosten Hin + Rück (€)</label>
     <input class="inpsm" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
     <div id="auto-km-hint" style="font-size:11px;color:var(--muted);margin-top:5px;display:none"></div>
@@ -435,7 +436,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <!-- BAHN -->
   <div class="tblock">
-    <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span></div>
+    <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span><span class="cost-badge" id="bahn-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
       <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
@@ -501,7 +502,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <!-- FLUG -->
   <div class="tblock">
-    <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span></div>
+    <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span><span class="cost-badge" id="flug-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
       <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">⭐ Hin- &amp; Rückreise auf einmal einfügen</div>
@@ -878,7 +879,7 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   const meta=`Hin: ${fDT(state.hD,state.hT)} · Rück: ${fDT(state.rD,state.rT)}`;
   const rpill=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">${meta}</span>`;
   document.getElementById("rpill-links").innerHTML=rpill;
-  document.getElementById("rpill-prices").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong>`;
+  document.getElementById("rpill-prices").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">↗ ${fD(state.hD)} ${state.hT} Uhr &nbsp;·&nbsp; ↙ ${fD(state.rD)} ${state.rT} Uhr</span>`;
   const nights=calcNights(state.hD,state.rD);
   document.getElementById("rpill-results").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">Hin: ${fD(state.hD)} · Rück: ${fD(state.rD)}${nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""}</span>`;
   updateHotelUI();
@@ -1067,6 +1068,10 @@ function renderCard(item,isBest){
 // ── New search ────────────────────────────────────────────────────────────────
 document.getElementById("btn-new-search").addEventListener("click",()=>{
   // Reset all inputs
+  // Clear mirror override flags so mirroring works again after reset
+  ['bahn-rueck-te','bahn-rueck-ts','flug-rueck-te','flug-rueck-ts','auto-tr-re','auto-tr-rs'].forEach(function(id){
+    var el=document.getElementById(id); if(el) delete el.dataset.userEdited;
+  });
   ["inp-start","inp-ziel","hD","rD","auto-kosten",
    "bahn-hin-dep","bahn-hin-arr","bahn-hin-price","bahn-rueck-dep","bahn-rueck-arr","bahn-rueck-price",
    "flug-hin-dep","flug-hin-arr","flug-hin-price","flug-rueck-dep","flug-rueck-arr","flug-rueck-price",
@@ -1285,6 +1290,93 @@ function showParseResult(el, type, msg, duration) {
   var ms = duration || (msg.length > 80 ? 12000 : 8000);
   setTimeout(function(){ el.style.display = 'none'; }, ms);
 }
+
+// ── Live cost badges ─────────────────────────────────────────────────────────
+function updateCostBadge(id, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (!val || isNaN(val) || val <= 0) { el.textContent = '—'; return; }
+  el.textContent = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(val);
+}
+function updateAutoBadge() {
+  var k = parseFloat(document.getElementById('auto-kosten').value) || 0;
+  var nights = calcNights(state.hD, state.rD);
+  updateCostBadge('auto-cost-badge', k + nights * state.hotelPrice);
+}
+function updateBahnBadge() {
+  var hp = parseFloat(document.getElementById('bahn-hin-price').value)   || 0;
+  var rp = parseFloat(document.getElementById('bahn-rueck-price').value) || 0;
+  var sh = document.getElementById('seat-hin').checked   ? 5.50 : 0;
+  var sr = document.getElementById('seat-rueck').checked ? 5.50 : 0;
+  var nights = calcNights(state.hD, state.rD);
+  var total = hp + rp + sh + sr + nights * state.hotelPrice;
+  updateCostBadge('bahn-cost-badge', total > 0 ? total : 0);
+}
+function updateFlugBadge() {
+  var hp = parseFloat(document.getElementById('flug-hin-price').value)   || 0;
+  var rp = parseFloat(document.getElementById('flug-rueck-price').value) || 0;
+  var bh = document.getElementById('bag-hin').checked   ? 20 : 0;
+  var br = document.getElementById('bag-rueck').checked ? 20 : 0;
+  var nights = calcNights(state.hD, state.rD);
+  var total = hp + rp + bh + br + nights * state.hotelPrice;
+  updateCostBadge('flug-cost-badge', total > 0 ? total : 0);
+}
+// Hook cost badge updates to relevant inputs
+['auto-kosten','hotel-price'].forEach(function(id){
+  var el=document.getElementById(id); if(el) el.addEventListener('input', updateAutoBadge);
+});
+['bahn-hin-price','bahn-rueck-price'].forEach(function(id){
+  var el=document.getElementById(id); if(el) el.addEventListener('input', updateBahnBadge);
+});
+['flug-hin-price','flug-rueck-price'].forEach(function(id){
+  var el=document.getElementById(id); if(el) el.addEventListener('input', updateFlugBadge);
+});
+['seat-hin-cb','seat-rueck-cb'].forEach(function(id){
+  var el=document.getElementById(id); if(el) el.addEventListener('click', function(){ setTimeout(updateBahnBadge, 50); });
+});
+['bag-hin-cb','bag-rueck-cb'].forEach(function(id){
+  var el=document.getElementById(id); if(el) el.addEventListener('click', function(){ setTimeout(updateFlugBadge, 50); });
+});
+
+// ── Transfer time mirroring ───────────────────────────────────────────────────
+// Rule A: hin-ts (Weg von Zuhause) ↔ rueck-te (Weg nach Hause) — symmetric
+// Rule B: hin-te (Weg zum Ziel)    ↔ rueck-ts (Weg vom Ziel)    — symmetric
+// Each mirrored field stays editable (user can override)
+function mirrorTransfer(changedId, mirrorId) {
+  var src = document.getElementById(changedId);
+  var dst = document.getElementById(mirrorId);
+  if (!src || !dst) return;
+  src.addEventListener('input', function() {
+    // Only mirror if target is empty OR equals previous value of source
+    // (i.e. user hasn't manually changed target yet)
+    if (dst.dataset.userEdited !== '1') {
+      dst.value = src.value;
+    }
+  });
+  // Mark field as manually edited when user directly types in it
+  dst.addEventListener('input', function() {
+    dst.dataset.userEdited = '1';
+  });
+  // When source changes and target was mirrored, keep in sync unless user edited
+  src.addEventListener('change', function() {
+    if (dst.dataset.userEdited !== '1') {
+      dst.value = src.value;
+    }
+  });
+}
+
+// Bahn: Rule A — Zuhause→Bahnhof mirrors Heimatbahnhof→Zuhause
+mirrorTransfer('bahn-hin-ts',  'bahn-rueck-te');
+// Bahn: Rule B — Bahnhof→Ziel mirrors Rückfahrt-Bahnhof
+mirrorTransfer('bahn-hin-te',  'bahn-rueck-ts');
+// Flug: Rule A — Zuhause→Flughafen mirrors Heimatflughafen→Zuhause
+mirrorTransfer('flug-hin-ts',  'flug-rueck-te');
+// Flug: Rule B — Flughafen→Ziel mirrors Rückflug-Flughafen
+mirrorTransfer('flug-hin-te',  'flug-rueck-ts');
+// Auto: Rule A — Zuhause→Fuhrpark mirrors Fuhrpark→Zuhause
+mirrorTransfer('auto-tr-hs',   'auto-tr-re');
+// Auto: Rule B — Parkplatz→Ziel mirrors Weg zum Fahrzeug
+mirrorTransfer('auto-tr-he',   'auto-tr-rs');
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 updateHotelUI();
