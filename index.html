@@ -235,13 +235,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
 <!-- STEP DOTS -->
 <div class="steps" id="steps">
-  <div class="sdot active" id="dot0"></div>
+  <div class="sdot active" id="dot0" title="Eingabe"></div>
   <div class="sline"></div>
-  <div class="sdot" id="dot1"></div>
+  <div class="sdot" id="dot1" title="Preise &amp; Zeiten"></div>
   <div class="sline"></div>
-  <div class="sdot" id="dot2"></div>
+  <div class="sdot" id="dot2" title="Übersicht"></div>
   <div class="sline"></div>
-  <div class="sdot" id="dot3"></div>
+  <div class="sdot" id="dot3" title="Ergebnis"></div>
 </div>
 
 <!-- ════════════════════════════════════════════
@@ -350,28 +350,18 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div style="font-size:11px;color:var(--muted);margin-top:7px">Wird zu allen Optionen addiert. Preis anpassbar.</div>
   </div>
 
-  <div class="err" id="err-s1"></div>
-  <button class="btnp" id="btn-s1">Weiter → Preise suchen</button>
-</div>
-
-<!-- ════════════════════════════════════════════
-     SCREEN 2 – OMIO
-════════════════════════════════════════════ -->
-<div class="screen" id="s-links">
-  <button class="backbtn" data-back="s-form">← Zurück</button>
-  <div class="rpill" id="rpill-links"></div>
-  <div class="hotel-box" id="hotel-box-s2" style="display:none;margin-bottom:14px"></div>
-  <div class="slbl">Preise nachschlagen</div>
-  <div class="hint">Klicken Sie auf „Bei Omio suchen" und geben Sie dort <strong>Start, Ziel und Datum</strong> ein. Notieren Sie Preise, Abfahrts- und Ankunftszeiten.</div>
+  <div style="height:8px"></div>
+  <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
   <a class="btn-omio" href="https://www.omio.at" target="_blank" rel="noopener noreferrer">👉 Bei Omio suchen ↗</a>
-  <button class="btnp" id="btn-s2">Preise eintragen →</button>
+  <div class="err" id="err-s1"></div>
+  <button class="btnp" id="btn-s1">Preise &amp; Zeiten eintragen →</button>
 </div>
 
 <!-- ════════════════════════════════════════════
      SCREEN 3 – PREISE
 ════════════════════════════════════════════ -->
 <div class="screen" id="s-prices">
-  <button class="backbtn" data-back="s-links">← Zurück</button>
+  <button class="backbtn" data-back="s-form">← Zurück</button>
   <div class="rpill" id="rpill-prices"></div>
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
@@ -574,6 +564,47 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <button class="btnp" id="btn-s3">Beste Reiseoption berechnen →</button>
 </div>
 
+
+<!-- ════════════════════════════════════════════
+     SCREEN 3 – ÜBERSICHT
+════════════════════════════════════════════ -->
+<div class="screen" id="s-overview">
+  <button class="backbtn" data-back="s-prices">← Preise anpassen</button>
+  <div class="rpill" id="rpill-overview"></div>
+
+  <div class="slbl">Reiseübersicht</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+    Bitte prüfen Sie die erfassten Informationen. Preise und Hotelkosten können hier direkt angepasst werden.
+  </p>
+
+  <!-- Reisezeitraum -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle"><span class="cdot" style="background:var(--gold)"></span>📅 Reisezeitraum</div>
+    <div id="ov-zeitraum" style="font-size:14px;line-height:2;color:var(--text)"></div>
+  </div>
+
+  <!-- Reisemittel (dynamisch befüllt) -->
+  <div id="ov-transport-container"></div>
+
+  <!-- Hotel -->
+  <div class="hotel-box" id="ov-hotel" style="display:none">
+    <div class="ctitle" style="margin-bottom:10px">
+      <span class="cdot" style="background:var(--orange)"></span>🏨 Hotel
+    </div>
+    <div class="hotel-row">
+      <div class="hotel-chip" id="ov-hotel-chip"></div>
+      <span style="color:var(--muted)">×</span>
+      <input class="inpsm" type="number" id="ov-hotel-price" min="0" step="1" style="max-width:90px"
+        oninput="document.getElementById('hotel-price').value=this.value;state.hotelPrice=parseFloat(this.value)||0;updateHotelUI();updateOvHotel()">
+      <span style="font-size:12px;color:var(--muted)">€ / Nacht</span>
+      <span class="hotel-total" id="ov-hotel-total"></span>
+    </div>
+  </div>
+
+  <div style="height:10px"></div>
+  <button class="btnp" id="btn-s-overview">Beste Reiseoption berechnen →</button>
+</div>
+
 <!-- ════════════════════════════════════════════
      SCREEN 4 – ERGEBNISSE
 ════════════════════════════════════════════ -->
@@ -691,8 +722,7 @@ function fillWorkSel(selId,maxMin){
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  const map={sf:0,sl:1,sp:2,sr:3};
-  const idx={"s-form":0,"s-links":1,"s-prices":2,"s-results":3}[id]||0;
+  const idx={"s-form":0,"s-prices":1,"s-overview":2,"s-results":3}[id]||0;
   document.querySelectorAll(".sdot").forEach((d,i)=>{
     d.classList.toggle("done",i<idx);
     d.classList.toggle("active",i===idx);
@@ -897,17 +927,14 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   // Update rpills
   const meta=`Hin: ${fDT(state.hD,state.hT)} · Rück: ${fDT(state.rD,state.rT)}`;
   const rpill=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">${meta}</span>`;
-  document.getElementById("rpill-links").innerHTML=rpill;
   document.getElementById("rpill-prices").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">↗ ${fD(state.hD)} ${state.hT} Uhr &nbsp;·&nbsp; ↙ ${fD(state.rD)} ${state.rT} Uhr</span>`;
   const nights=calcNights(state.hD,state.rD);
   document.getElementById("rpill-results").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">Hin: ${fD(state.hD)} · Rück: ${fD(state.rD)}${nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""}</span>`;
   updateHotelUI();
-  showScreen("s-links");
+  showScreen("s-prices");
 });
 
 // ── Screen 2 → 3 ─────────────────────────────────────────────────────────────
-document.getElementById("btn-s2").addEventListener("click",()=>showScreen("s-prices"));
-
 // ── Calculate ─────────────────────────────────────────────────────────────────
 function g(id){return document.getElementById(id);}
 function gv(id){return parseFloat(g(id).value)||0;}
@@ -1085,9 +1112,8 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
   err.classList.remove("show");
   items.sort((a,b)=>a.score-b.score);
   _lastItems = items.slice();
-  document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
-  renderResults(items);
-  showScreen("s-results");
+  buildOverview(_lastItems);
+  showScreen("s-overview");
 });
 
 // ── Render results ────────────────────────────────────────────────────────────
@@ -1645,6 +1671,104 @@ document.querySelectorAll('[data-prio-r]').forEach(function(t){
       renderResults(_lastItems.slice());
     }
   });
+});
+
+// ── Overview screen ──────────────────────────────────────────────────────────
+function updateOvHotel(){
+  var nights=calcNights(state.hD,state.rD);
+  var total=nights*state.hotelPrice;
+  var box=document.getElementById('ov-hotel');
+  if(!box)return;
+  box.style.display=nights>0?'block':'none';
+  document.getElementById('ov-hotel-chip').textContent=nights+' Übernachtung'+(nights>1?'en':'');
+  document.getElementById('ov-hotel-price').value=state.hotelPrice;
+  document.getElementById('ov-hotel-total').textContent='= '+new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(total);
+}
+
+function buildOverview(items){
+  var nights=calcNights(state.hD,state.rD);
+  // Zeitraum
+  var zr=document.getElementById('ov-zeitraum');
+  if(zr){
+    zr.innerHTML='<div>↗ <strong>Hinreise:</strong> '+fDT(state.hD,state.hT)+'</div>'
+      +'<div>↙ <strong>Rückreise:</strong> '+fDT(state.rD,state.rT)+'</div>'
+      +(nights>0?'<div>🏨 <strong>Übernachtungen:</strong> '+nights+' Nacht'+(nights>1?'e':'')+'</div>':'');
+  }
+
+  // rpill
+  var rp=document.getElementById('rpill-overview');
+  if(rp) rp.innerHTML='<strong>'+state.startText+'</strong> <span class="rarrow">⇄</span> <strong>'+state.zielText+'</strong>'
+    +'<span class="rmeta">↗ '+fD(state.hD)+' · ↙ '+fD(state.rD)+'</span>';
+
+  // Transport cards
+  var con=document.getElementById('ov-transport-container');
+  if(!con)return;
+  var icons={auto:'🚗',bahn:'🚆',flug:'✈️','kombi-bahn-flug':'🚆✈️','kombi-flug-bahn':'✈️🚆'};
+  var html='';
+  items.forEach(function(item){
+    var tColor={auto:'rgba(251,191,36,0.15)',bahn:'rgba(52,211,153,0.12)',flug:'rgba(96,165,250,0.12)'}[item.transport]||'rgba(255,255,255,0.06)';
+    var borderColor={auto:'rgba(251,191,36,0.3)',bahn:'rgba(52,211,153,0.3)',flug:'rgba(96,165,250,0.3)'}[item.transport]||'var(--br)';
+    html+='<div style="background:'+tColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:14px 16px;margin-bottom:10px">';
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    html+='<span style="font-size:20px">'+(icons[item.id]||'🚌')+'</span>';
+    html+='<strong style="font-size:14px">'+item.label+'</strong>';
+    // Editable price
+    html+='<div style="margin-left:auto;display:flex;align-items:center;gap:6px">';
+    html+='<span style="font-size:11px;color:var(--muted)">Gesamtpreis:</span>';
+    html+='<input class="inpsm" type="number" min="0" step="0.01" style="max-width:90px;text-align:right" '
+      +'value="'+(item.total-(item.hotel||0)-(item.extras||0)).toFixed(2)+'" '
+      +'oninput="updateOvPrice(''+item.id+'',this.value,'+JSON.stringify(item)+')">';
+    html+='<span style="font-size:11px;color:var(--muted)">€</span></div>';
+    html+='</div>';
+    // Journey details
+    if(item.showTimes&&item.hinDep){
+      html+='<div style="font-size:12px;color:var(--muted);line-height:1.8">';
+      html+='↗ '+item.hinDep+' → '+item.hinArr+' ('+durS(item.hinDur)+')';
+      if(item.rueckDep) html+='&nbsp;&nbsp;↙ '+item.rueckDep+' → '+item.rueckArr+' ('+durS(item.rueckDur)+')';
+      html+='</div>';
+    }
+    // Transfer summary
+    var tparts=[];
+    if(item.trHinStart>0) tparts.push('Anreise Hin: '+durS(item.trHinStart));
+    if(item.trHinEnd>0) tparts.push('Transfer Ziel: '+durS(item.trHinEnd));
+    if(item.trRueckStart>0) tparts.push('Anreise Rück: '+durS(item.trRueckStart));
+    if(item.trRueckEnd>0) tparts.push('Transfer Heim: '+durS(item.trRueckEnd));
+    if(tparts.length) html+='<div style="font-size:11px;color:var(--blue);margin-top:4px">🚌 '+tparts.join(' · ')+'</div>';
+    html+='</div>';
+  });
+  con.innerHTML=html||'<p style="color:var(--muted);font-size:13px">Keine Optionen eingetragen.</p>';
+  updateOvHotel();
+}
+
+function updateOvPrice(itemId, newVal, item){
+  // Update the underlying price fields so recalc uses new value
+  var parsed=parseFloat(newVal)||0;
+  if(itemId==='auto'){
+    var el=document.getElementById('auto-kosten');
+    if(el){el.value=parsed.toFixed(2);updateAutoBadge();}
+  } else if(itemId==='bahn'){
+    // Split evenly across hin/rueck
+    var half=(parsed/2).toFixed(2);
+    var h=document.getElementById('bahn-hin-price'),r=document.getElementById('bahn-rueck-price');
+    if(h)h.value=half;if(r)r.value=half;updateBahnBadge();
+  } else if(itemId==='flug'){
+    var half2=(parsed/2).toFixed(2);
+    var h2=document.getElementById('flug-hin-price'),r2=document.getElementById('flug-rueck-price');
+    if(h2)h2.value=half2;if(r2)r2.value=half2;updateFlugBadge();
+  }
+}
+
+document.getElementById('btn-s-overview').addEventListener('click',function(){
+  // Re-trigger calculation from current field values and go to results
+  document.getElementById('btn-s3').click();
+  // btn-s3 now shows s-overview; override to go to results
+  setTimeout(function(){
+    if(_lastItems.length>0){
+      document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
+      renderResults(_lastItems);
+      showScreen('s-results');
+    }
+  },50);
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
