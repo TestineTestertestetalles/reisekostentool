@@ -932,6 +932,27 @@ function isBlockComplete(prefix){
     return el && el.value && el.value.trim()!=='';
   });
 }
+function isBlockPartial(prefix){
+  // Returns true if at least one field is filled but block is not complete
+  var fields = prefix==='auto'
+    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    : prefix==='bahn'
+    ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
+       'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
+       'bahn-hin-ts','bahn-hin-te','bahn-rueck-ts','bahn-rueck-te']
+    : ['flug-hin-dep','flug-hin-arr','flug-hin-price',
+       'flug-rueck-dep','flug-rueck-arr','flug-rueck-price',
+       'flug-hin-ts','flug-hin-te','flug-rueck-ts','flug-rueck-te'];
+  var anyFilled = fields.some(function(id){
+    var el=document.getElementById(id);
+    return el && el.value && el.value.trim()!=='';
+  });
+  var allFilled = fields.every(function(id){
+    var el=document.getElementById(id);
+    return el && el.value && el.value.trim()!=='';
+  });
+  return anyFilled && !allFilled;
+}
 function getMissingInBlock(prefix){
   var fields = prefix==='auto'
     ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
@@ -1091,19 +1112,48 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
 
   const err=document.getElementById("err-s3");
   clearInvalid();
-  // Validate: at least one COMPLETE block required
+  // Validate: partially filled blocks must be completed
   var autoComplete  = isBlockComplete('auto') && state.hasLicence;
   var bahnComplete  = isBlockComplete('bahn');
   var flugComplete  = isBlockComplete('flug');
+  var autoPartial   = !autoComplete && state.hasLicence && isBlockPartial('auto');
+  var bahnPartial   = !bahnComplete && isBlockPartial('bahn');
+  var flugPartial   = !flugComplete && isBlockPartial('flug');
+
+  var partialErrors = [];
+  var partialMissing = [];
+
+  // Rule: any partially filled block MUST be completed
+  if(autoPartial){
+    partialErrors.push('Auto');
+    getMissingInBlock('auto').forEach(function(id){ partialMissing.push(id); });
+  }
+  if(bahnPartial){
+    partialErrors.push('Deutsche Bahn');
+    getMissingInBlock('bahn').forEach(function(id){ partialMissing.push(id); });
+  }
+  if(flugPartial){
+    partialErrors.push('Flug');
+    getMissingInBlock('flug').forEach(function(id){ partialMissing.push(id); });
+  }
+
+  if(partialErrors.length){
+    markInvalid(partialMissing);
+    err.textContent="⚠ Begonnene Blöcke müssen vollständig ausgefüllt werden: "
+      + partialErrors.join(', ')
+      + ". Bitte alle rot markierten Felder ausfüllen oder den Block vollständig leeren.";
+    err.classList.add("show");return;
+  }
+
+  // Rule: at least one block must be complete
   if(!autoComplete && !bahnComplete && !flugComplete){
-    // Mark all three blocks' empty fields as invalid
     var missing=[];
     ['auto','bahn','flug'].forEach(function(p){
-      if(p==='auto'&&!state.hasLicence) return; // skip auto if no licence
+      if(p==='auto'&&!state.hasLicence) return;
       getMissingInBlock(p).forEach(function(id){ missing.push(id); });
     });
     markInvalid(missing);
-    err.textContent="⚠ Bitte mindestens einen vollständigen Block (Auto, Bahn oder Flug) vollständig ausfüllen – rot markierte Felder müssen befüllt sein, bevor die Reiseübersicht angezeigt werden kann.";
+    err.textContent="⚠ Bitte mindestens einen Block (Auto, Bahn oder Flug) vollständig ausfüllen – rot markierte Felder müssen befüllt sein, bevor die Reiseübersicht angezeigt werden kann.";
     err.classList.add("show");return;
   }
   // Validate: need at least one price entered (any transport)
