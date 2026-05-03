@@ -561,6 +561,17 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     </div>
   </div>
 
+
+
+
+  <!-- Reisemittel (dynamisch befüllt) -->
+  <div id="ov-transport-container"></div>
+
+
+
+  <!-- Hotel moved into Reisezeitraum card -->
+
+
   <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
   <div class="card" style="margin-bottom:10px">
     <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
@@ -583,14 +594,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       <div id="ov-work-container"></div>
     </div>
   </div>
-
-
-  <!-- Reisemittel (dynamisch befüllt) -->
-  <div id="ov-transport-container"></div>
-
-
-
-  <!-- Hotel moved into Reisezeitraum card -->
 
   <div style="height:10px"></div>
   <button class="btnp" id="btn-s-overview">Beste Reiseoption berechnen →</button>
@@ -1709,7 +1712,11 @@ function buildOverview(items){
   var icons={auto:'🚗',bahn:'🚆',flug:'✈️','kombi-bahn-flug':'🚆✈️','kombi-flug-bahn':'✈️🚆'};
   var html='';
   // Only show pure transport options (no combos — shown on results page)
-  items.filter(function(item){ return item.id==='auto'||item.id==='bahn'||item.id==='flug'; }).forEach(function(item){
+  // Sort: auto → bahn → flug
+  var ORDER = {auto:0, bahn:1, flug:2};
+  var sortedItems = items.filter(function(item){ return item.id==='auto'||item.id==='bahn'||item.id==='flug'; })
+    .sort(function(a,b){ return (ORDER[a.id]||9)-(ORDER[b.id]||9); });
+  sortedItems.forEach(function(item){
     var tColor={auto:'rgba(251,191,36,0.15)',bahn:'rgba(52,211,153,0.12)',flug:'rgba(96,165,250,0.12)'}[item.transport]||'rgba(255,255,255,0.06)';
     var borderColor={auto:'rgba(251,191,36,0.3)',bahn:'rgba(52,211,153,0.3)',flug:'rgba(96,165,250,0.3)'}[item.transport]||'var(--br)';
     html+='<div style="background:'+tColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:14px 16px;margin-bottom:10px">';
@@ -1758,7 +1765,10 @@ function buildOverview(items){
   workSection.style.display='block';
 
   var workHtml='';
-  items.filter(function(it){ return it.id==='bahn'||it.id==='flug'; }).forEach(function(item){
+  // Sort work table: bahn first, then flug
+  var workItems = items.filter(function(it){ return it.id==='bahn'||it.id==='flug'; })
+    .sort(function(a,b){ return (a.id==='bahn'?0:1)-(b.id==='bahn'?0:1); });
+  workItems.forEach(function(item){
     var isBahn = item.id==='bahn';
     var icon   = isBahn?'🚆':'✈️';
     var label  = item.label;
@@ -1786,9 +1796,11 @@ function buildOverview(items){
       workHtml += ovWorkRow('🚆','Fahrt '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''), mainHinDur, 'bahn-hin-work', false);
       workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
     } else {
+      // Flug: always show rows, even if no times entered
+      var noTimesHint = mainHinDur===0 ? ' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>' : '';
       workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(hinDepSt||''), trHinStart, '', true);
-      workHtml += ovWorkRow('🛂','Am Gate (Wartezeit)', gateDur, 'flug-hin-gate-work', false);
-      workHtml += ovWorkRow('✈️','Flugzeit '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''), mainHinDur, 'flug-hin-work', false);
+      workHtml += ovWorkRow('🛂','Am Gate'+noTimesHint, gateDur, 'flug-hin-gate-work', false);
+      workHtml += ovWorkRow('✈️','Flugzeit '+(hinDepSt&&hinArrSt?hinDepSt+' → '+hinArrSt:(hinDepSt||'')), mainHinDur, 'flug-hin-work', mainHinDur===0);
       workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
     }
     workHtml += '</table>';
@@ -1800,9 +1812,10 @@ function buildOverview(items){
       workHtml += ovWorkRow('🚆','Fahrt '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''), mainRueckDur, 'bahn-rueck-work', false);
       workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
     } else {
+      var noTimesHintR = mainRueckDur===0 ? ' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>' : '';
       workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(rueckDepSt||''), trRueckStart, '', true);
-      workHtml += ovWorkRow('🛂','Am Gate (Wartezeit)', gateDur, 'flug-rueck-gate-work', false);
-      workHtml += ovWorkRow('✈️','Flugzeit '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''), mainRueckDur, 'flug-rueck-work', false);
+      workHtml += ovWorkRow('🛂','Am Gate'+noTimesHintR, gateDur, 'flug-rueck-gate-work', false);
+      workHtml += ovWorkRow('✈️','Flugzeit '+(rueckDepSt&&rueckArrSt?rueckDepSt+' → '+rueckArrSt:(rueckDepSt||'')), mainRueckDur, 'flug-rueck-work', mainRueckDur===0);
       workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
     }
     workHtml += '</table></div>';
