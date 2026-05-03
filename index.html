@@ -967,6 +967,9 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       showTimes:!!(hinDep||rueckDep),
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr,hinDur:dm,rueckDep,rueckArr,rueckDur:dmR,
+      hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
+      rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
+      transport:"bahn",
       seatHin:g("seat-hin").checked,seatRueck:g("seat-rueck").checked
     });
   }
@@ -993,6 +996,9 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       showTimes:!!(hinDep||rueckDep),
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr,hinDur:dm,rueckDep,rueckArr,rueckDur:dmR,
+      hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
+      rueckDepSt:getSt("flug-rueck-dep-station"),rueckArrSt:getSt("flug-rueck-arr-station"),
+      transport:"flug",
       bagHin:g("bag-hin").checked,bagRueck:g("bag-rueck").checked
     });
   }
