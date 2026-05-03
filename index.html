@@ -313,7 +313,7 @@ input.req-field:focus{
     <div class="ctitle"><span class="cdot" style="background:var(--gold)"></span> ↗ Hinreise – gewünschte Ankunft</div>
     <div class="g2">
       <div><label class="flbl">Datum</label><input id="hD" type="date" class="req-field"></div>
-      <div><label class="flbl">Uhrzeit (Ankunft)</label><input id="hT" type="time" value="10:00"></div>
+      <div><label class="flbl">Uhrzeit (Ankunft)</label><input id="hT" type="time" value="10:00" class="req-field"></div>
     </div>
   </div>
 
@@ -322,7 +322,7 @@ input.req-field:focus{
     <div class="ctitle"><span class="cdot" style="background:var(--blue)"></span> ↙ Rückreise – geplante Abfahrt</div>
     <div class="g2">
       <div><label class="flbl">Datum</label><input id="rD" type="date" class="req-field"></div>
-      <div><label class="flbl">Uhrzeit (Abfahrt)</label><input id="rT" type="time" value="17:00"></div>
+      <div><label class="flbl">Uhrzeit (Abfahrt)</label><input id="rT" type="time" value="17:00" class="req-field"></div>
     </div>
   </div>
 
@@ -773,8 +773,8 @@ document.addEventListener("click",e=>{
 // ── Setup autocomplete ────────────────────────────────────────────────────────
 const inpStart=document.getElementById("inp-start");
 const inpZiel=document.getElementById("inp-ziel");
-inpStart.addEventListener("input",()=>{state.startGeo=null;nominatim(inpStart.value,"drop-start",h=>{state.startText=h.short;state.startGeo=h;inpStart.value=h.short;updateAutoKmHint();});});
-inpZiel.addEventListener("input",()=>{state.zielGeo=null;nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();});});
+inpStart.addEventListener("input",()=>{state.startGeo=null;inpStart.classList.remove("invalid");nominatim(inpStart.value,"drop-start",h=>{state.startText=h.short;state.startGeo=h;inpStart.value=h.short;updateAutoKmHint();});});
+inpZiel.addEventListener("input",()=>{state.zielGeo=null;inpZiel.classList.remove("invalid");nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();});});
 
 // ── Swap button ───────────────────────────────────────────────────────────────
 document.getElementById("swap-btn").addEventListener("click",()=>{
@@ -857,7 +857,11 @@ function updateHotelUI(){
 
 // ── Date/time listeners ───────────────────────────────────────────────────────
 ["hD","hT","rD","rT"].forEach(id=>{
-  document.getElementById(id).addEventListener("change",e=>{state[id]=e.target.value;updateHotelUI();updateWorkSelAuto();});
+  document.getElementById(id).addEventListener("change",e=>{
+    state[id]=e.target.value;
+    e.target.classList.remove("invalid");
+    updateHotelUI();
+  });
 });
 
 // ── Auto km hint ──────────────────────────────────────────────────────────────
@@ -954,9 +958,21 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   if(!state.startText) missingS1.push('inp-start');
   if(!state.zielText)  missingS1.push('inp-ziel');
   if(!state.hD)        missingS1.push('hD');
+  if(!state.hT)        missingS1.push('hT');
   if(!state.rD)        missingS1.push('rD');
-  if(missingS1.length){markInvalid(missingS1);err.textContent="⚠ Bitte alle rot markierten Felder ausfüllen.";err.classList.add("show");return;}
-  if(!state.startGeo||!state.zielGeo){markInvalid(['inp-start','inp-ziel']);err.textContent="⚠ Bitte Orte aus der Vorschlagsliste wählen.";err.classList.add("show");return;}
+  if(!state.rT)        missingS1.push('rT');
+  if(missingS1.length){
+    markInvalid(missingS1);
+    err.textContent="⚠ Bitte alle rot markierten Felder ausfüllen – erst dann kann die Übersicht angezeigt werden.";
+    err.classList.add("show");
+    return;
+  }
+  if(!state.startGeo||!state.zielGeo){
+    markInvalid(['inp-start','inp-ziel']);
+    err.textContent="⚠ Bitte Start- und Zielort aus der Vorschlagsliste wählen.";
+    err.classList.add("show");
+    return;
+  }
   err.classList.remove("show");
   updateAutoOverlay();
   // Update rpills
@@ -1087,7 +1103,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       getMissingInBlock(p).forEach(function(id){ missing.push(id); });
     });
     markInvalid(missing);
-    err.textContent="⚠ Bitte mindestens einen vollständigen Block ausfüllen (alle Felder inkl. Transferzeiten).";
+    err.textContent="⚠ Bitte mindestens einen vollständigen Block (Auto, Bahn oder Flug) vollständig ausfüllen – rot markierte Felder müssen befüllt sein, bevor die Reiseübersicht angezeigt werden kann.";
     err.classList.add("show");return;
   }
   // Validate: need at least one price entered (any transport)
