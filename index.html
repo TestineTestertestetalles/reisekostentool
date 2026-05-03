@@ -391,7 +391,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <button class="backbtn" data-back="s-links">← Zurück</button>
   <div class="rpill" id="rpill-prices"></div>
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:8px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
+  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
+    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
+  </div>
 
   <!-- AUTO -->
   <div class="tblock" style="position:relative">
@@ -549,6 +552,16 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   </div>
 
   <!-- Hotel S3 -->
+  <!-- Hidden station name fields populated by parser -->
+  <input type="hidden" id="bahn-hin-dep-station" value="">
+  <input type="hidden" id="bahn-hin-arr-station" value="">
+  <input type="hidden" id="bahn-rueck-dep-station" value="">
+  <input type="hidden" id="bahn-rueck-arr-station" value="">
+  <input type="hidden" id="flug-hin-dep-station" value="">
+  <input type="hidden" id="flug-hin-arr-station" value="">
+  <input type="hidden" id="flug-rueck-dep-station" value="">
+  <input type="hidden" id="flug-rueck-arr-station" value="">
+
   <div class="hotel-box" id="hotel-box-s3" style="display:none">
     <div class="ctitle" style="margin-bottom:10px"><span class="cdot" style="background:var(--orange)"></span> 🏨 Hotel – wird automatisch addiert</div>
     <div class="hotel-row">
@@ -574,6 +587,29 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <div class="print-header" id="print-header"></div>
 
   <button class="backbtn no-print" data-back="s-prices">← Preise anpassen</button>
+
+  <!-- Optimierungsziel auf Ergebnisseite -->
+  <div class="card no-print" style="margin-bottom:14px;padding:16px 18px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">🎯 Optimierungsziel</span>
+      <div style="margin-left:auto;position:relative">
+        <button id="prio-info-btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--br);border-radius:50%;width:22px;height:22px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center" onclick="document.getElementById('prio-info-box').classList.toggle('show')">?</button>
+        <div id="prio-info-box" style="display:none;position:absolute;right:0;top:28px;z-index:50;width:280px;background:#1a1a2e;border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:14px;font-size:12px;color:var(--text);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+          <strong style="color:var(--gold)">Wie wird gewichtet?</strong><br><br>
+          Der Effizienz-Score berechnet sich aus Kosten und Reisezeit:<br><br>
+          <strong style="color:#60a5fa">💶 Günstigste:</strong> Kosten zählen doppelt so stark wie Zeit.<br><br>
+          <strong style="color:#60a5fa">⚖️ Ausgewogen:</strong> Kosten und Zeit sind gleichwertig gewichtet.<br><br>
+          <strong style="color:#60a5fa">⚡ Schnellste:</strong> Reisezeit zählt doppelt so stark wie Kosten.<br><br>
+          <span style="color:var(--muted)">Niedrigster Score = beste Option. Änderungen wirken sofort.</span>
+        </div>
+      </div>
+    </div>
+    <div class="prio-grid" id="prio-grid-results">
+      <div class="prio-tile" data-prio-r="cost"><div class="prio-tile-icon">💶</div><div class="prio-tile-label">Günstigste</div><div class="prio-tile-sub">Kosten zählen</div></div>
+      <div class="prio-tile active" data-prio-r="balanced"><div class="prio-tile-icon">⚖️</div><div class="prio-tile-label">Ausgewogen</div><div class="prio-tile-sub">Kosten &amp; Zeit</div></div>
+      <div class="prio-tile" data-prio-r="time"><div class="prio-tile-icon">⚡</div><div class="prio-tile-label">Schnellste</div><div class="prio-tile-sub">Zeit zählt</div></div>
+    </div>
+  </div>
   <div class="rpill no-print" id="rpill-results"></div>
   <div class="recom no-print" id="recom-box">
     <span style="font-size:20px">💡</span>
@@ -876,6 +912,8 @@ function g(id){return document.getElementById(id);}
 function gv(id){return parseFloat(g(id).value)||0;}
 function gs(id){return g(id).value||"";}
 
+function getSt(id){ var el=document.getElementById(id); return el?el.value:""; }
+
 document.getElementById("btn-s3").addEventListener("click",()=>{
   const items=[];
   const nights=calcNights(state.hD,state.rD);
@@ -907,7 +945,8 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       showTimes:fm>0,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr:state.hT,hinDur:fm,
-      rueckDep:state.rT,rueckArr,rueckDur:fm
+      rueckDep:state.rT,rueckArr,rueckDur:fm,
+      transport:"auto"
     });
   }
 
@@ -995,7 +1034,10 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       showTimes:true,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep:bahnHinDep,hinArr:gs("bahn-hin-arr"),hinDur:dmH,
-      rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR
+      rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR,
+      hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
+      rueckDepSt:getSt("flug-rueck-dep-station"),rueckArrSt:getSt("flug-rueck-arr-station"),
+      transport:"flug"
     });
   }
   // Combo B: Flug Hin + Bahn Rück
@@ -1015,7 +1057,10 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       showTimes:true,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep:flugHinDep,hinArr:gs("flug-hin-arr"),hinDur:dmH,
-      rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR
+      rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR,
+      hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
+      rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
+      transport:"bahn"
     });
   }
   if(!items.length){
@@ -1024,6 +1069,8 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
   }
   err.classList.remove("show");
   items.sort((a,b)=>a.score-b.score);
+  _lastItems = items.slice();
+  document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
   renderResults(items);
   showScreen("s-results");
 });
@@ -1079,13 +1126,29 @@ function renderCard(item,isBest){
   // Times block
   let timesRows="";
   const hasAnyTime=item.showTimes||item.trHinStart>0||item.trHinEnd>0||item.trRueckStart>0||item.trRueckEnd>0;
+  // Smart station labels
+  var tLbl = {
+    hinStart:  item.transport==="bahn" ? "Weg von Zuhause nach "+(item.hinDepSt||"Bahnhof")
+             : item.transport==="flug" ? "Weg zum Flughafen "+(item.hinDepSt||"")
+             : "Fahrt von Zuhause zum Fuhrpark",
+    hinEnd:    item.transport==="bahn" ? "Weg vom Bahnhof "+(item.hinArrSt||"")+" zum Ziel"
+             : item.transport==="flug" ? "Weg vom Flughafen "+(item.hinArrSt||"")+" zum Ziel"
+             : "Weg vom Parkplatz zum Ziel",
+    rueckStart:item.transport==="bahn" ? "Weg zum Bahnhof "+(item.rueckDepSt||"")
+             : item.transport==="flug" ? "Weg zum Flughafen "+(item.rueckDepSt||"")
+             : "Weg zum Fahrzeug",
+    rueckEnd:  item.transport==="bahn" ? "Weg vom Bahnhof "+(item.rueckArrSt||"")+" nach Hause"
+             : item.transport==="flug" ? "Weg vom Flughafen "+(item.rueckArrSt||"")+" nach Hause"
+             : "Weg vom Fuhrpark nach Hause"
+  };
+
   if(hasAnyTime){
-    if(item.trHinStart>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 Hin: Anreise</span><span class="times-val blue">${durS(item.trHinStart)}</span></div>`;
+    if(item.trHinStart>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 ${tLbl.hinStart}</span><span class="times-val blue">${durS(item.trHinStart)}</span></div>`;
     if(item.showTimes&&item.hinDep) timesRows+=`<div class="times-row"><span class="times-leg">↗ Hinreise</span><span class="times-val">${item.hinDep} → ${item.hinArr} (${durS(item.hinDur)})</span></div>`;
-    if(item.trHinEnd>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 Hin: Transfer Ziel</span><span class="times-val blue">${durS(item.trHinEnd)}</span></div>`;
-    if(item.trRueckStart>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 Rück: Anreise</span><span class="times-val blue">${durS(item.trRueckStart)}</span></div>`;
+    if(item.trHinEnd>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 ${tLbl.hinEnd}</span><span class="times-val blue">${durS(item.trHinEnd)}</span></div>`;
+    if(item.trRueckStart>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 ${tLbl.rueckStart}</span><span class="times-val blue">${durS(item.trRueckStart)}</span></div>`;
     if(item.showTimes&&item.rueckDep) timesRows+=`<div class="times-row"><span class="times-leg">↙ Rückreise</span><span class="times-val">${item.rueckDep} → ${item.rueckArr} (${durS(item.rueckDur)})</span></div>`;
-    if(item.trRueckEnd>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 Rück: Transfer Heim</span><span class="times-val blue">${durS(item.trRueckEnd)}</span></div>`;
+    if(item.trRueckEnd>0) timesRows+=`<div class="times-row"><span class="times-leg blue">🚌 ${tLbl.rueckEnd}</span><span class="times-val blue">${durS(item.trRueckEnd)}</span></div>`;
   }
 
   return `
@@ -1101,7 +1164,12 @@ function renderCard(item,isBest){
         <div class="rnv lg${isBest?" gold":""}">${eurR(item.total)}</div>
         <div class="rns">${item.costDetail}</div>
       </div>
-      ${item.hotel>0?`<div><div class="rnl">Hotel</div><div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div><div class="rns">${item.nights} Übernachtung${item.nights>1?"en":""}</div></div>`:""}
+      <div>
+        <div class="rnl">Fahrtkosten</div>
+        <div class="rnv">${eurR(item.total - (item.hotel||0) - (item.extras||0))}</div>
+        <div class="rns">ohne Hotel & Extras</div>
+      </div>
+      ${item.hotel>0?`<div><div class="rnl">Hotelkosten</div><div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div><div class="rns">${item.nights} Übernachtung${item.nights>1?"en":""}</div></div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
     </div>
     ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}}</div>`:""}
@@ -1277,11 +1345,16 @@ function parseOmioCombined(transport) {
   if (deps.length >= 1) {
     document.getElementById(transport+'-hin-dep').value = deps[0].time;
     document.getElementById(transport+'-hin-dep').dispatchEvent(new Event('change'));
+    // Store station names in hidden fields
+    var hinDepSt = document.getElementById(transport+'-hin-dep-station');
+    if (hinDepSt) hinDepSt.value = deps[0].station;
     found.push('↗ Abfahrt: '+deps[0].time+' ('+deps[0].station+')');
   }
   if (arrs.length >= 1) {
     document.getElementById(transport+'-hin-arr').value = arrs[0].time;
     document.getElementById(transport+'-hin-arr').dispatchEvent(new Event('change'));
+    var hinArrSt = document.getElementById(transport+'-hin-arr-station');
+    if (hinArrSt) hinArrSt.value = arrs[0].station;
     found.push('Ankunft: '+arrs[0].time+' ('+arrs[0].station+')');
   }
 
@@ -1289,9 +1362,13 @@ function parseOmioCombined(transport) {
   if (isRoundTrip) {
     document.getElementById(transport+'-rueck-dep').value = deps[1].time;
     document.getElementById(transport+'-rueck-dep').dispatchEvent(new Event('change'));
+    var rueckDepSt = document.getElementById(transport+'-rueck-dep-station');
+    if (rueckDepSt) rueckDepSt.value = deps[1].station;
     found.push('↙ Abfahrt: '+deps[1].time+' ('+deps[1].station+')');
     document.getElementById(transport+'-rueck-arr').value = arrs[1].time;
     document.getElementById(transport+'-rueck-arr').dispatchEvent(new Event('change'));
+    var rueckArrSt = document.getElementById(transport+'-rueck-arr-station');
+    if (rueckArrSt) rueckArrSt.value = arrs[1].station;
     found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
   }
 
@@ -1475,6 +1552,43 @@ mirrorTransfer('flug-hin-te',  'flug-rueck-ts');
 mirrorTransfer('auto-tr-hs',   'auto-tr-re');
 // Auto: Rule B — Parkplatz→Ziel mirrors Weg zum Fahrzeug
 mirrorTransfer('auto-tr-he',   'auto-tr-rs');
+
+// ── Results page prio tiles ──────────────────────────────────────────────────
+var _lastItems = []; // store last computed items for re-sort
+document.addEventListener('click', function(e){
+  // Close prio info box when clicking outside
+  var infoBox = document.getElementById('prio-info-box');
+  var infoBtn = document.getElementById('prio-info-btn');
+  if(infoBox && !infoBox.contains(e.target) && infoBtn && !infoBtn.contains(e.target)){
+    infoBox.style.display='none';
+  }
+});
+// Toggle info box display
+document.addEventListener('DOMContentLoaded', function(){
+  var ib=document.getElementById('prio-info-box');
+  if(ib) ib.addEventListener('click', function(e){ e.stopPropagation(); });
+});
+
+document.querySelectorAll('[data-prio-r]').forEach(function(t){
+  t.addEventListener('click', function(){
+    state.priority = t.dataset.prioR;
+    // Sync with page-1 tiles
+    document.querySelectorAll('[data-prio]').forEach(function(x){ x.classList.toggle('active', x.dataset.prio===state.priority); });
+    document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
+    // Re-sort and re-render
+    if(_lastItems.length > 0){
+      function scoreItem(item){
+        var p=state.priority, cost=item.total, timeMin=(item.dH||0)+(item.dR||0);
+        if(p==='cost') return cost/10+timeMin/120;
+        if(p==='time') return cost/40+timeMin/30;
+        return cost/20+timeMin/60;
+      }
+      _lastItems.forEach(function(item){ item.score=scoreItem(item); });
+      _lastItems.sort(function(a,b){ return a.score-b.score; });
+      renderResults(_lastItems);
+    }
+  });
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 updateHotelUI();
