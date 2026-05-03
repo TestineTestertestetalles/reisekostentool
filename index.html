@@ -410,7 +410,7 @@ input.req-field:focus{
 
   <!-- BAHN -->
   <div class="tblock bahn">
-    <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span><span class="cost-badge" id="bahn-cost-badge">—</span></div>
+    <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span><span style="font-size:11px;color:var(--muted)" id="bahn-persons-hint"></span><span class="cost-badge" id="bahn-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
       <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (Hin- und/oder Rückreise)</div>
@@ -460,7 +460,7 @@ input.req-field:focus{
 
   <!-- FLUG -->
   <div class="tblock flug">
-    <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span><span class="cost-badge" id="flug-cost-badge">—</span></div>
+    <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span><span style="font-size:11px;color:var(--muted)" id="flug-persons-hint"></span><span class="cost-badge" id="flug-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
       <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">📋 Omio-Text einfügen (Hin- und/oder Rückflug)</div>
@@ -1001,7 +1001,28 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   const rpill=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">${meta}</span>`;
   document.getElementById("rpill-prices").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">↗ ${fD(state.hD)} ${state.hT} Uhr &nbsp;·&nbsp; ↙ ${fD(state.rD)} ${state.rT} Uhr</span>`;
   const nights=calcNights(state.hD,state.rD);
-  document.getElementById("rpill-results").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">Hin: ${fD(state.hD)} · Rück: ${fD(state.rD)}${nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""}</span>`;
+  document.getElementById("rpill-results").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">Hin: ${fD(state.hD)} · Rück: ${fD(state.rD)}${nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""} · ${state.persons} Person${state.persons>1?"en":""}</span>`;
+  // Update persons hint in bahn/flug headers
+  var ph=document.getElementById("bahn-persons-hint");
+  if(ph) ph.textContent=state.persons>1?" Preis pro Person, × "+state.persons+" Personen":"";
+  var phf=document.getElementById("flug-persons-hint");
+  if(phf) phf.textContent=state.persons>1?" Preis pro Person, × "+state.persons+" Personen":"";
+  // Auto hint
+  var numCarsHint=Math.ceil(state.persons/5);
+  var autoHdr=document.getElementById("auto-cost-badge");
+  // Note in auto block header
+  var autoBadgeNote=document.getElementById("auto-persons-note");
+  if(!autoBadgeNote){
+    var aHdrEl=document.getElementById("auto-cost-badge");
+    if(aHdrEl){
+      var noteSpan=document.createElement("span");
+      noteSpan.id="auto-persons-note";
+      noteSpan.style.cssText="font-size:11px;color:var(--muted)";
+      aHdrEl.parentNode.insertBefore(noteSpan,aHdrEl);
+    }
+  }
+  var apn=document.getElementById("auto-persons-note");
+  if(apn) apn.textContent=state.persons>1?(numCarsHint>1?" "+numCarsHint+" Autos (max. 5/Auto)":" "+state.persons+" Personen, 1 Auto"):"";
   updateHotelUI();
   showScreen("s-prices");
 });
@@ -1082,23 +1103,33 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const wH=parseInt(gs("auto-work-hin"))||0,wR=parseInt(gs("auto-work-rueck"))||0;
     const hinDep=fm?addM(state.hT,-fm):"";
     const rueckArr=fm?addM(state.rT,fm):"";
-    const total=autoK+hotelTotal;
+    // Persons: max 5 per car, ceil(persons/5) cars needed
+    const numCars=Math.ceil(state.persons/5);
+    const autoKTotal=autoK*numCars;
+    const total=autoKTotal+hotelTotal;
+    const autoPersonLabel=state.persons>1
+      ?(numCars>1
+        ?" ("+state.persons+" Personen, "+numCars+" Autos × "+eur(autoK)+")"
+        :" ("+state.persons+" Personen, 1 Auto)")
+      :"";
     items.push({
       id:"auto",icon:"🚗",label:"Auto",total,hotel:hotelTotal,nights,extras:0,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:nights>0?"Mit Übernachtung":"Gleichtag",badgeCls:nights>0?"rbo":"rbg",
-      costDetail:eur(autoK)+" Fahrt"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
-      detail:"Autokosten: "+eur(autoK)+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
+      costDetail:eur(autoKTotal)+" Fahrt"+autoPersonLabel+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
+      detail:"Autokosten: "+eur(autoK)+" je Auto × "+numCars+(numCars>1?" Autos":" Auto")+" = "+eur(autoKTotal)+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
       showTimes:fm>0,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr:state.hT,hinDur:fm,
       rueckDep:state.rT,rueckArr,rueckDur:fm,
-      transport:"auto"
+      transport:"auto",
+      numCars,persons:state.persons
     });
   }
 
-  // BAHN
-  const bhP=gv("bahn-hin-price"),brP=gv("bahn-rueck-price");
+  // BAHN — price per person, multiply by state.persons
+  const bhPperPerson=gv("bahn-hin-price"),brPperPerson=gv("bahn-rueck-price");
+  const bhP=bhPperPerson*state.persons, brP=brPperPerson*state.persons;
   if(bhP||brP){
     const hinDep=gs("bahn-hin-dep"),hinArr=gs("bahn-hin-arr");
     const rueckDep=gs("bahn-rueck-dep"),rueckArr=gs("bahn-rueck-arr");
@@ -1107,28 +1138,32 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const BAHN_PUFFER=15; // Puffer für Bahnhof Hin- und Rückweg
     const dH=dm+trHS+trHE+BAHN_PUFFER,dR=dmR+trRS+trRE+BAHN_PUFFER;
     const wH=parseInt(gs("bahn-hin-work"))||0,wR=parseInt(gs("bahn-rueck-work"))||0;
-    const seatH=g("seat-hin").checked?SEAT:0,seatR=g("seat-rueck").checked?SEAT:0;
+    // Seat reservation per person
+    const seatH=g("seat-hin").checked?SEAT*state.persons:0,seatR=g("seat-rueck").checked?SEAT*state.persons:0;
     const extras=seatH+seatR;
     const transport=bhP+brP;const total=transport+extras+hotelTotal;
+    const bahnPersonLabel=state.persons>1?" ("+state.persons+" × "+eur(bhPperPerson+brPperPerson)+"/Pers.)":"";
     items.push({
       id:"bahn",icon:"🚆",label:"Deutsche Bahn",total,hotel:hotelTotal,nights,extras,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:"Sparpreis",badgeCls:"rbg",
-      costDetail:eur(transport)+(extras?" + "+eur(extras)+" Extras":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
-      detail:"Hin: "+eur(bhP)+" · Rück: "+eur(brP)+(extras?". Sitzplatz: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
+      costDetail:eur(transport)+bahnPersonLabel+(extras?" + "+eur(extras)+" Extras":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
+      detail:"Hin: "+eur(bhPperPerson)+" · Rück: "+eur(brPperPerson)+" (je Person)"+(state.persons>1?" × "+state.persons+" Personen = "+eur(transport):"")+(extras?". Sitzplatz: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
       showTimes:!!(hinDep||rueckDep),
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr,hinDur:dm,rueckDep,rueckArr,rueckDur:dmR,
       hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
       rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
-      transport:"bahn",
+      transport:"bahn",persons:state.persons,pricePerPerson:bhPperPerson+brPperPerson,
       seatHin:g("seat-hin").checked,seatRueck:g("seat-rueck").checked
     });
   }
 
   // FLUG
-  const fhP=gv("flug-hin-price"),frP=gv("flug-rueck-price");
   const FLUG_PUFFER=90; // Sicherheitskontrolle + Gate + Boarding
+  // FLUG — price per person
+  const fhPperPerson=gv("flug-hin-price"),frPperPerson=gv("flug-rueck-price");
+  const fhP=fhPperPerson*state.persons, frP=frPperPerson*state.persons;
   if(fhP||frP){
     const hinDep=gs("flug-hin-dep"),hinArr=gs("flug-hin-arr");
     const rueckDep=gs("flug-rueck-dep"),rueckArr=gs("flug-rueck-arr");
@@ -1137,15 +1172,16 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const dH=dm+trHS+trHE+(hinDep?FLUG_PUFFER:0),dR=dmR+trRS+trRE+(rueckDep?FLUG_PUFFER:0);
     const wH=(parseInt(gs("flug-hin-work"))||0)+(parseInt(gs("flug-hin-gate-work"))||0);
     const wR=(parseInt(gs("flug-rueck-work"))||0)+(parseInt(gs("flug-rueck-gate-work"))||0);
-    const bagH=g("bag-hin").checked?BAG:0,bagR=g("bag-rueck").checked?BAG:0;
+    const bagH=g("bag-hin").checked?BAG*state.persons:0,bagR=g("bag-rueck").checked?BAG*state.persons:0;
     const extras=bagH+bagR;
     const transport=fhP+frP;const total=transport+extras+hotelTotal;
+    const flugPersonLabel=state.persons>1?" ("+state.persons+" × "+eur(fhPperPerson+frPperPerson)+"/Pers.)":"";
     items.push({
       id:"flug",icon:"✈️",label:"Flug + Transfer",total,hotel:hotelTotal,nights,extras,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:"Flug",badgeCls:"rbm",
-      costDetail:eur(transport)+(extras?" + "+eur(extras)+" Gepäck":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
-      detail:"Hin: "+eur(fhP)+" · Rück: "+eur(frP)+(extras?". Gepäck: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
+      costDetail:eur(transport)+flugPersonLabel+(extras?" + "+eur(extras)+" Gepäck":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
+      detail:"Hin: "+eur(fhPperPerson)+" · Rück: "+eur(frPperPerson)+" (je Person)"+(state.persons>1?" × "+state.persons+" Personen = "+eur(transport):"")+(extras?". Gepäck: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
       showTimes:!!(hinDep||rueckDep),
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
       hinDep,hinArr,hinDur:dm,rueckDep,rueckArr,rueckDur:dmR,
@@ -1363,6 +1399,8 @@ function renderCard(item,isBest,allItems){
         <div class="rnv">${eurR(item.total - (item.hotel||0) - (item.extras||0))}</div>
         <div class="rns">${item.costDetail}</div>
       </div>
+      ${item.persons>1&&item.pricePerPerson?`<div><div class="rnl">Preis/Person</div><div class="rnv" style="font-size:15px">${eur(item.pricePerPerson)}</div><div class="rns">${item.persons} Personen</div></div>`:""}
+      ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars} Autos</div><div class="rns">max. 5 Pers./Auto</div></div>`:""}
       ${item.hotel>0?`<div><div class="rnl">Hotelkosten</div><div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div><div class="rns">${item.nights} Übernachtung${item.nights>1?"en":""}</div></div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
     </div>
