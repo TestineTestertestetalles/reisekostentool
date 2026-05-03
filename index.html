@@ -137,6 +137,9 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
 /* Price block */
 .tblock{background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:16px;margin-bottom:10px;position:relative;}
+.tblock.auto{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.03);}
+.tblock.bahn{border-color:rgba(52,211,153,0.35);background:rgba(52,211,153,0.03);}
+.tblock.flug{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.03);}
 .cost-badge{margin-left:auto;font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--gold);background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:20px;padding:3px 10px;transition:all 0.2s;}
 .tblock.disabled-overlay::after{content:'';position:absolute;inset:0;border-radius:var(--rs);background:rgba(12,12,20,0.85);backdrop-filter:blur(3px);z-index:5;display:flex;align-items:center;justify-content:center;}
 .no-licence-banner{position:absolute;inset:0;border-radius:var(--rs);background:rgba(12,12,20,0.85);backdrop-filter:blur(3px);z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;}
@@ -158,6 +161,9 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .rcard.best{background:linear-gradient(135deg,rgba(251,191,36,0.09),rgba(251,191,36,0.03));border-color:rgba(251,191,36,0.45);}
 .bestbadge{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1000;font-size:9px;font-weight:800;padding:5px 12px;border-radius:0 12px 0 8px;letter-spacing:0.08em;}
 .rcard-hdr{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+.rcard-total{margin-left:auto;font-size:20px;font-weight:800;font-family:'DM Mono',monospace;}
+.rcard-total.gold{color:var(--gold);}
+.rcard-total.normal{color:var(--text);}
 .ricon{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.06);}
 .ricon.best{background:rgba(251,191,36,0.15);}
 .rname{font-size:16px;font-weight:700;}
@@ -368,13 +374,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <button class="backbtn" data-back="s-links">← Zurück</button>
   <div class="rpill" id="rpill-prices"></div>
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:8px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
-  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
-    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
-  </div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
 
   <!-- AUTO -->
-  <div class="tblock" style="position:relative">
+  <div class="tblock auto" style="position:relative">
     <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span><span class="cost-badge" id="auto-cost-badge">—</span></div>
     <label class="flbl">Gesamtkosten Hin + Rück (€)</label>
     <input class="inpsm" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
@@ -420,8 +423,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     </div>
   </div>
 
+  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
+    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
+  </div>
+
   <!-- BAHN -->
-  <div class="tblock">
+  <div class="tblock bahn">
     <div class="tblock-hdr"><span style="font-size:20px">🚆</span><span style="font-size:14px;font-weight:700">Deutsche Bahn</span><span class="cost-badge" id="bahn-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
@@ -481,7 +488,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   </div>
 
   <!-- FLUG -->
-  <div class="tblock">
+  <div class="tblock flug">
     <div class="tblock-hdr"><span style="font-size:20px">✈️</span><span style="font-size:14px;font-weight:700">Flug + Transfer</span><span class="cost-badge" id="flug-cost-badge">—</span></div>
     <!-- Kombinierter Hin+Rück Parser -->
     <div class="paste-box" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.04);margin-bottom:16px">
@@ -1101,7 +1108,7 @@ function renderResults(items){
 
   // Cards
   const container=document.getElementById("results-container");
-  container.innerHTML=items.map((item,i)=>renderCard(item,i===0)).join("");
+  container.innerHTML=items.map((item,i)=>renderCard(item,i===0,items)).join("");
 
   // Print header
   document.getElementById("print-header").innerHTML=`
@@ -1125,11 +1132,31 @@ function renderResults(items){
   document.getElementById("results-footnote").textContent=`Optimierungsziel: ${pLabel} · Preise aus Omio · Auto: individuell · Hotel: ${eur(state.hotelPrice)}/Nacht`;
 }
 
-function renderCard(item,isBest){
+function renderCard(item,isBest,allItems){
   const totalMin=item.dH+item.dR;
-  const bw=Math.max(5,Math.min(100,100-(item.score/15)*100));
-  const barColor=isBest?"linear-gradient(90deg,#fbbf24,#f59e0b)":bw>60?"#34d399":"#94a3b8";
+  // Inverted score: higher = better (score is raw cost/time metric, lower=better internally)
+  // Normalize against all items: best item gets 100, worst gets ~10
+  const scores = allItems.map(function(x){ return x.score; });
+  const minScore = Math.min.apply(null,scores);
+  const maxScore = Math.max.apply(null,scores);
+  const scoreRange = maxScore - minScore || 1;
+  // Efficiency = inverted: best (lowest raw score) → 100%, worst → 15%
+  const bw = Math.round(100 - ((item.score - minScore) / scoreRange) * 85);
+  const barColor=isBest?"linear-gradient(90deg,#fbbf24,#f59e0b)":bw>=70?"#34d399":bw>=45?"#60a5fa":"#94a3b8";
   const wTotal=(item.wH||0)+(item.wR||0);
+
+  // Build score explanation
+  const avgCost = allItems.reduce(function(s,x){return s+x.total;},0)/allItems.length;
+  const avgTime = allItems.reduce(function(s,x){return s+(x.dH+x.dR);},0)/allItems.length;
+  const costDiff = Math.round((item.total - avgCost)/avgCost*100);
+  const timeDiff = Math.round((totalMin - avgTime)/avgTime*100);
+  const costWord = costDiff<=-10?"deutlich günstiger":costDiff<=-2?"günstiger":costDiff<=2?"durchschnittlich":costDiff<=10?"teurer":"deutlich teurer";
+  const timeWord = timeDiff<=-10?"deutlich schneller":timeDiff<=-2?"schneller":timeDiff<=2?"durchschnittlich":timeDiff<=10?"langsamer":"deutlich langsamer";
+  const prioName = state.priority==="cost"?"Kosten-Effizienz":state.priority==="time"?"Zeit-Effizienz":"Gesamt-Effizienz";
+  const scoreExpl = "Kosten: "+eurR(item.total)+" ("+Math.abs(costDiff)+"% "+(costDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(avgCost))+")"
+    +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
+    +" · Effizienz-Score: "+bw+"% ("+prioName+")";
+  const cardId = "score-info-"+item.id.replace(/[^a-z0-9]/g,"");
 
   // Times block
   let timesRows="";
@@ -1179,17 +1206,13 @@ function renderCard(item,isBest){
     <div class="rcard-hdr">
       <div class="ricon${isBest?" best":""}">${item.icon}</div>
       <div><span class="rname">${item.label}</span><span class="rbadge ${item.badgeCls}">${item.badge}</span></div>
+      <div class="rcard-total ${isBest?"gold":"normal"}">${eurR(item.total)}</div>
     </div>
     <div class="rnums">
       <div>
-        <div class="rnl">Gesamtkosten</div>
-        <div class="rnv lg${isBest?" gold":""}">${eurR(item.total)}</div>
-        <div class="rns">${item.costDetail}</div>
-      </div>
-      <div>
         <div class="rnl">Fahrtkosten</div>
         <div class="rnv">${eurR(item.total - (item.hotel||0) - (item.extras||0))}</div>
-        <div class="rns">ohne Hotel & Extras</div>
+        <div class="rns">${item.costDetail}</div>
       </div>
       ${item.hotel>0?`<div><div class="rnl">Hotelkosten</div><div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div><div class="rns">${item.nights} Übernachtung${item.nights>1?"en":""}</div></div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
@@ -1197,7 +1220,19 @@ function renderCard(item,isBest){
     ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}}</div>`:""}
     ${hasAnyTime?`<div class="times-block">${timesRows}</div>`:""}
     ${wTotal>0?`<div class="work-row"><span style="font-size:14px">💼</span><span style="font-size:12px;color:var(--muted)">Produktive Reisezeit gesamt:</span><span class="work-val">${durS(wTotal)}</span>${item.wH>0&&item.wR>0?`<span style="font-size:11px;color:var(--muted);margin-left:6px">(Hin: ${durS(item.wH)} / Rück: ${durS(item.wR)})</span>`:""}</div>`:""}
-    <div class="sbar"><div class="sbarlbl">Effizienz-Score</div><div class="sbartr"><div class="sbarfi" style="width:${bw}%;background:${barColor}"></div></div></div>
+    <div class="sbar">
+      <div class="sbarlbl" style="display:flex;align-items:center;gap:6px">
+        Effizienz-Score (${bw}%)
+        <span style="position:relative;display:inline-block">
+          <button onclick="var el=document.getElementById('${cardId}');el.style.display=el.style.display==='none'?'block':'none'" style="background:rgba(255,255,255,0.06);border:1px solid var(--br);border-radius:50%;width:16px;height:16px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:700;line-height:1;padding:0">?</button>
+          <div id="${cardId}" style="display:none;position:absolute;left:0;bottom:22px;z-index:50;width:300px;background:#1a1a2e;border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px;font-size:11px;color:var(--text);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+            <strong style="color:var(--gold)">Warum dieser Score?</strong><br>
+            ${scoreExpl}
+          </div>
+        </span>
+      </div>
+      <div class="sbartr"><div class="sbarfi" style="width:${bw}%;background:${barColor}"></div></div>
+    </div>
     ${item.detail?`<div class="rdetail">${item.detail}</div>`:""}
   </div>`;
 }
@@ -1607,7 +1642,7 @@ document.querySelectorAll('[data-prio-r]').forEach(function(t){
       }
       _lastItems.forEach(function(item){ item.score=scoreItem(item); });
       _lastItems.sort(function(a,b){ return a.score-b.score; });
-      renderResults(_lastItems);
+      renderResults(_lastItems.slice());
     }
   });
 });
