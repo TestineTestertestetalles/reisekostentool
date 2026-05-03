@@ -163,6 +163,11 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .bestbadge{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1000;font-size:9px;font-weight:800;padding:5px 12px;border-radius:0 12px 0 8px;letter-spacing:0.08em;}
 .rcard-hdr{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
 .rcard-total{margin-left:auto;font-size:20px;font-weight:800;font-family:'DM Mono',monospace;}
+.persons-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:var(--blue);margin-left:6px;}
+.cost-per-person{font-size:28px;font-weight:800;font-family:'DM Mono',monospace;}
+.cost-per-person.gold{color:var(--gold);}
+.cost-per-person-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.cost-total-small{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;}
 .rcard-total.gold{color:var(--gold);}
 .rcard-total.normal{color:var(--text);}
 .ricon{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.06);}
@@ -1338,10 +1343,25 @@ function renderCard(item,isBest,allItems){
   const costWord = costDiff<=-10?"deutlich günstiger":costDiff<=-2?"günstiger":costDiff<=2?"durchschnittlich":costDiff<=10?"teurer":"deutlich teurer";
   const timeWord = timeDiff<=-10?"deutlich schneller":timeDiff<=-2?"schneller":timeDiff<=2?"durchschnittlich":timeDiff<=10?"langsamer":"deutlich langsamer";
   const prioName = state.priority==="cost"?"Kosten-Effizienz":state.priority==="time"?"Zeit-Effizienz":"Gesamt-Effizienz";
-  const scoreExpl = "Kosten: "+eurR(item.total)+" ("+Math.abs(costDiff)+"% "+(costDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(avgCost))+")"
+  const scoreExpl = "Kosten: "+eurR(costPerPerson)+"/Pers. ("+Math.abs(costDiff)+"% "+(costDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(avgCost))+" gesamt)"
     +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
     +" · Effizienz-Score: "+bw+"% ("+prioName+")";
   const cardId = "score-info-"+item.id.replace(/[^a-z0-9]/g,"");
+
+  // Per-person cost calculation
+  const persons = item.persons || 1;
+  // Transport cost per person:
+  // - Auto: total car cost / persons (shared vehicle)
+  // - Bahn/Flug: pricePerPerson already = cost per person (excl. hotel/extras)
+  const transportCost = item.total - (item.hotel||0) - (item.extras||0);
+  const costPerPerson = (item.transport === "auto")
+    ? (item.total / persons)          // auto: everything divided by persons
+    : (item.pricePerPerson||0)        // bahn/flug: per-person ticket price
+      + (item.hotel>0 ? (item.hotel/persons) : 0)   // hotel per person
+      + (item.extras>0 ? (item.extras/persons) : 0); // extras per person
+  // For auto: breakdown
+  const autoTransportPerPerson = (item.transport==="auto") ? (transportCost/persons) : 0;
+  const hotelPerPerson = item.hotel>0 ? (item.hotel/persons) : 0;
 
   // Times block
   let timesRows="";
@@ -1390,19 +1410,35 @@ function renderCard(item,isBest,allItems){
     ${isBest?'<div class="bestbadge">★ BESTE WAHL</div>':""}
     <div class="rcard-hdr">
       <div class="ricon${isBest?" best":""}">${item.icon}</div>
-      <div><span class="rname">${item.label}</span><span class="rbadge ${item.badgeCls}">${item.badge}</span></div>
-      <div class="rcard-total ${isBest?"gold":"normal"}">${eurR(item.total)}</div>
+      <div>
+        <span class="rname">${item.label}</span>
+        <span class="rbadge ${item.badgeCls}">${item.badge}</span>
+        ${persons>1?`<span class="persons-badge">👥 ${persons} Personen</span>`:""}
+      </div>
+      <div class="rcard-total ${isBest?"gold":"normal"}" style="font-size:14px;text-align:right">
+        <div class="cost-per-person-lbl">pro Person</div>
+        <div class="cost-per-person ${isBest?"gold":""}">${eurR(costPerPerson)}</div>
+        ${persons>1?`<div class="cost-total-small">Gesamt: ${eurR(item.total)}</div>`:""}
+      </div>
     </div>
     <div class="rnums">
       <div>
-        <div class="rnl">Fahrtkosten</div>
-        <div class="rnv">${eurR(item.total - (item.hotel||0) - (item.extras||0))}</div>
+        <div class="rnl">Fahrtkosten${persons>1?" gesamt":""}</div>
+        <div class="rnv">${eurR(transportCost)}</div>
         <div class="rns">${item.costDetail}</div>
       </div>
-      ${item.persons>1&&item.pricePerPerson?`<div><div class="rnl">Preis/Person</div><div class="rnv" style="font-size:15px">${eur(item.pricePerPerson)}</div><div class="rns">${item.persons} Personen</div></div>`:""}
-      ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars} Autos</div><div class="rns">max. 5 Pers./Auto</div></div>`:""}
-      ${item.hotel>0?`<div><div class="rnl">Hotelkosten</div><div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div><div class="rns">${item.nights} Übernachtung${item.nights>1?"en":""}</div></div>`:""}
+      ${persons>1?`<div>
+        <div class="rnl">Fahrtkosten/Person</div>
+        <div class="rnv" style="color:var(--blue)">${eurR(transportCost/persons)}</div>
+        <div class="rns">${item.transport==="auto"&&item.numCars>1?item.numCars+" Autos ÷ "+persons+" Pers.":persons+" Personen"}</div>
+      </div>`:""}
+      ${item.hotel>0?`<div>
+        <div class="rnl">Hotel${persons>1?" gesamt":""}</div>
+        <div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div>
+        <div class="rns">${item.nights} Nacht${item.nights>1?"¨e":""}${persons>1?" · "+eurR(hotelPerPerson)+"/Pers.":""}</div>
+      </div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
+      ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars}</div><div class="rns">Autos (max. 5 Pers./Auto)</div></div>`:""}
     </div>
     ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}}</div>`:""}
     ${hasAnyTime?`<div class="times-block">${timesRows}</div>`:""}
