@@ -253,6 +253,29 @@ input.req-field:focus{
   border-color:rgba(251,191,36,0.9)!important;
   background:rgba(251,191,36,0.12)!important;
 }
+/* ── Omio Guide ── */
+.guide-toggle{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;border:none;background:rgba(255,255,255,0.04);border-radius:var(--rs);color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:6px;transition:all 0.15s;}
+.guide-toggle:hover{background:rgba(255,255,255,0.08);color:var(--text);}
+.guide-toggle .chevron{transition:transform 0.25s;display:inline-block;font-style:normal;}
+.guide-toggle.open .chevron{transform:rotate(180deg);}
+.guide-box{display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--rs);padding:16px;margin-bottom:10px;}
+.guide-box.open{display:block;animation:fadeIn 0.2s ease;}
+.guide-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.guide-tab{flex:1;padding:7px 10px;border-radius:6px;border:1.5px solid var(--br);background:transparent;color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s;text-align:center;}
+.guide-tab.active{border-color:rgba(52,211,153,0.5);background:rgba(52,211,153,0.08);color:var(--green);}
+.guide-tab.active.flug{border-color:rgba(96,165,250,0.5);background:rgba(96,165,250,0.08);color:var(--blue);}
+.guide-content{display:none;}
+.guide-content.active{display:block;}
+.guide-step{display:flex;align-items:flex-start;gap:11px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.guide-step:last-child{border-bottom:none;padding-bottom:0;}
+.guide-num{flex-shrink:0;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}
+.guide-num.bahn{background:var(--green);}
+.guide-num.flug{background:var(--blue);}
+.guide-step-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.guide-step-body{flex:1;}
+.guide-step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.guide-step-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.guide-tip{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:9px 11px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px;font-size:11px;color:#c8a84b;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -359,6 +382,109 @@ input.req-field:focus{
   <div style="height:8px"></div>
   <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
   <a class="btn-omio" href="https://www.omio.at" target="_blank" rel="noopener noreferrer">👉 Bei Omio suchen ↗</a>
+
+  <!-- Omio Anleitung -->
+  <button class="guide-toggle" id="guide-toggle-btn" onclick="toggleGuide()">
+    <span>📖 Wie kopiere ich die Verbindung aus Omio?</span>
+    <span class="chevron">▼</span>
+  </button>
+  <div class="guide-box" id="guide-box">
+    <div class="guide-tabs">
+      <button class="guide-tab active" id="tab-bahn" onclick="switchGuideTab('bahn')">🚆 Bahn</button>
+      <button class="guide-tab flug" id="tab-flug" onclick="switchGuideTab('flug')">✈️ Flug</button>
+    </div>
+
+    <!-- BAHN -->
+    <div class="guide-content active" id="guide-bahn">
+      <div class="guide-step">
+        <div class="guide-num bahn">1</div>
+        <div class="guide-step-icon">🔍</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Start, Ziel &amp; Datum eingeben</div>
+          <div class="guide-step-desc">Auf omio.at Start- und Zielbahnhof sowie Hin- und Rückfahrtdatum eingeben.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num bahn">2</div>
+        <div class="guide-step-icon">🚆</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">„Zug" als Verkehrsmittel wählen</div>
+          <div class="guide-step-desc">Im oberen Filter-Bereich auf <strong>„Zug"</strong> klicken, damit nur Bahnverbindungen angezeigt werden.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num bahn">3</div>
+        <div class="guide-step-icon">↗</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Hinfahrt auswählen</div>
+          <div class="guide-step-desc">Passende Hinverbindung anklicken und bestätigen.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num bahn">4</div>
+        <div class="guide-step-icon">↙</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Rückfahrt auswählen</div>
+          <div class="guide-step-desc">Im nächsten Schritt die passende Rückverbindung wählen.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num bahn">5</div>
+        <div class="guide-step-icon">📋</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Text kopieren &amp; hier einfügen</div>
+          <div class="guide-step-desc">Rechts in der Reisezusammenfassung bei <strong>„Reist du mit jemandem zusammen?"</strong> auf das <strong>Kopier-Symbol</strong> (zwei übereinanderliegende Blätter) klicken → kopierten Text auf Seite 2 ins Einfügefeld einfügen.</div>
+        </div>
+      </div>
+      <div class="guide-tip">💡 <span>Der kopierte Text enthält alle Zeiten und den Preis — das Tool trägt alles automatisch ein.</span></div>
+    </div>
+
+    <!-- FLUG -->
+    <div class="guide-content" id="guide-flug">
+      <div class="guide-step">
+        <div class="guide-num flug">1</div>
+        <div class="guide-step-icon">🔍</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Start, Ziel &amp; Datum eingeben</div>
+          <div class="guide-step-desc">Auf omio.at Abflugort und Ziel sowie Hin- und Rückflugdatum eingeben.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num flug">2</div>
+        <div class="guide-step-icon">✈️</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">„Flug" als Verkehrsmittel wählen</div>
+          <div class="guide-step-desc">Im oberen Filter-Bereich auf <strong>„Flug"</strong> klicken, damit nur Flugverbindungen angezeigt werden.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num flug">3</div>
+        <div class="guide-step-icon">↗</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Hinflug auswählen</div>
+          <div class="guide-step-desc">Passenden Hinflug anklicken und bestätigen.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num flug">4</div>
+        <div class="guide-step-icon">↙</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Rückflug auswählen</div>
+          <div class="guide-step-desc">Im nächsten Schritt den passenden Rückflug wählen.</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num flug">5</div>
+        <div class="guide-step-icon">📋</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">Text kopieren &amp; hier einfügen</div>
+          <div class="guide-step-desc">Rechts in der Reisezusammenfassung bei <strong>„Reist du mit jemandem zusammen?"</strong> auf das <strong>Kopier-Symbol</strong> klicken → kopierten Text auf Seite 2 ins Einfügefeld einfügen.</div>
+        </div>
+      </div>
+      <div class="guide-tip">💡 <span>Tipp: Flugzeiten und Preis werden automatisch erkannt. Transferzeiten zum/vom Flughafen bitte manuell eintragen.</span></div>
+    </div>
+  </div>
+
   <div class="err" id="err-s1"></div>
   <button class="btnp" id="btn-s1">Preise &amp; Zeiten eintragen →</button>
 </div>
@@ -2076,6 +2202,22 @@ document.getElementById('btn-s-overview').addEventListener('click',function(){
     }
   },50);
 });
+
+// ── Omio Guide ───────────────────────────────────────────────────────────────
+function toggleGuide(){
+  var btn = document.getElementById('guide-toggle-btn');
+  var box = document.getElementById('guide-box');
+  btn.classList.toggle('open');
+  box.classList.toggle('open');
+}
+function switchGuideTab(tab){
+  // Tab buttons
+  document.getElementById('tab-bahn').classList.toggle('active', tab==='bahn');
+  document.getElementById('tab-flug').classList.toggle('active', tab==='flug');
+  // Content panels
+  document.getElementById('guide-bahn').classList.toggle('active', tab==='bahn');
+  document.getElementById('guide-flug').classList.toggle('active', tab==='flug');
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 updateHotelUI();
