@@ -858,10 +858,7 @@ function updateHotelUI(){
   document.getElementById("hotel-chip-s3").textContent=nights+" Übernachtung"+(nights>1?"en":"");
   document.getElementById("hotel-price-s3").textContent=state.hotelPrice;
   document.getElementById("hotel-total-s3").textContent="= "+eurR(total);
-  // S2
-  const hb2=document.getElementById("hotel-box-s2");
-  hb2.style.display=nights>0?"block":"none";
-  hb2.innerHTML=nights>0?`<div style="font-size:13px;font-weight:700;margin-bottom:4px">🏨 ${nights} Übernachtung${nights>1?"en":""} × ${eur(state.hotelPrice)} = <span style="color:var(--orange)">${eurR(total)}</span></div><div style="font-size:11px;color:var(--muted)">Wird automatisch zu allen Optionen addiert.</div>`:"";
+  // S2 (hotel-box-s2 removed with screen 2)
 }
 
 // ── Date/time listeners ───────────────────────────────────────────────────────
@@ -1713,11 +1710,14 @@ function buildOverview(items){
     html+='<span style="font-size:20px">'+(icons[item.id]||'🚌')+'</span>';
     html+='<strong style="font-size:14px">'+item.label+'</strong>';
     // Editable price
+    var itemId = item.id;
+    var transportCost = (item.total-(item.hotel||0)-(item.extras||0)).toFixed(2);
     html+='<div style="margin-left:auto;display:flex;align-items:center;gap:6px">';
     html+='<span style="font-size:11px;color:var(--muted)">Gesamtpreis:</span>';
     html+='<input class="inpsm" type="number" min="0" step="0.01" style="max-width:90px;text-align:right" '
-      +'value="'+(item.total-(item.hotel||0)-(item.extras||0)).toFixed(2)+'" '
-      +'oninput="updateOvPrice(''+item.id+'',this.value,'+JSON.stringify(item)+')">';
+      +'data-item-id="'+itemId+'" '
+      +'value="'+transportCost+'" '
+      +'oninput="updateOvPriceById(this.dataset.itemId, this.value)">';
     html+='<span style="font-size:11px;color:var(--muted)">€</span></div>';
     html+='</div>';
     // Journey details
@@ -1740,14 +1740,12 @@ function buildOverview(items){
   updateOvHotel();
 }
 
-function updateOvPrice(itemId, newVal, item){
-  // Update the underlying price fields so recalc uses new value
+function updateOvPrice(itemId, newVal){
   var parsed=parseFloat(newVal)||0;
   if(itemId==='auto'){
     var el=document.getElementById('auto-kosten');
     if(el){el.value=parsed.toFixed(2);updateAutoBadge();}
   } else if(itemId==='bahn'){
-    // Split evenly across hin/rueck
     var half=(parsed/2).toFixed(2);
     var h=document.getElementById('bahn-hin-price'),r=document.getElementById('bahn-rueck-price');
     if(h)h.value=half;if(r)r.value=half;updateBahnBadge();
@@ -1756,6 +1754,9 @@ function updateOvPrice(itemId, newVal, item){
     var h2=document.getElementById('flug-hin-price'),r2=document.getElementById('flug-rueck-price');
     if(h2)h2.value=half2;if(r2)r2.value=half2;updateFlugBadge();
   }
+}
+function updateOvPriceById(itemId, newVal){
+  updateOvPrice(itemId, newVal);
 }
 
 document.getElementById('btn-s-overview').addEventListener('click',function(){
