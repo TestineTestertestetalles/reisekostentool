@@ -329,23 +329,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <!-- Hotel (shown dynamically) -->
   <!-- Arbeit während der Reise -->
-  <div class="card">
-    <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Laptop, Unterlagen, Telefonate)</p>
-    <div class="work-grid">
-      <div class="prio-tile" data-work="yes" id="work-tile-yes">
-        <div class="prio-tile-icon">✅</div>
-        <div class="prio-tile-label">Ja, möglich</div>
-        <div class="prio-tile-sub">Reisezeit = Arbeitszeit</div>
-      </div>
-      <div class="prio-tile active" data-work="no" id="work-tile-no">
-        <div class="prio-tile-icon">🚫</div>
-        <div class="prio-tile-label">Nein, nicht möglich</div>
-        <div class="prio-tile-sub">Reine Reisezeit</div>
-      </div>
-    </div>
-    <p id="work-travel-hint" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;display:none"></p>
-  </div>
+  <!-- Work card moved to page 3 (s-overview) -->
 
   <div class="hotel-box" id="hotel-box-s1" style="display:none">
     <div class="ctitle" style="margin-bottom:10px"><span class="cdot" style="background:var(--orange)"></span> 🏨 Hotel – automatisch erkannt</div>
@@ -403,17 +387,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
         ⏱ Zusätzlich werden automatisch <strong>20 Minuten</strong> für Tanken und Abgabeprozedere am Fuhrpark aufgeschlagen.
       </div>
     </div>
-    <!-- Arbeitszeit -->
-    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px" id="auto-work-wrap" style="display:none">
-      <div>
-        <label class="flbl" style="color:var(--purple);font-size:10px">💼 Arbeitszeit Hinreise</label>
-        <select class="inpsm" id="auto-work-hin" style="color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-      </div>
-      <div>
-        <label class="flbl" style="color:var(--purple);font-size:10px">💼 Arbeitszeit Rückreise</label>
-        <select class="inpsm" id="auto-work-rueck" style="color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-      </div>
-    </div>
+    <!-- Auto work section moved to page 3 -->
     <!-- No-licence overlay -->
     <div class="no-licence-banner" id="auto-overlay">
       <div style="font-size:28px">🚫</div>
@@ -451,11 +425,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>15 Minuten</strong> Puffer für die Fahrt zum Bahnhof aufgeschlagen (Unpünktlichkeit, Orientierung, Ticketkauf).
       </div>
-      <div id="bahn-hin-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
-        <select class="inpsm" id="bahn-hin-work" style="width:auto;min-width:130px;color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-        <span id="bahn-hin-work-max" style="font-size:11px;color:var(--muted)"></span>
-      </div>
     </div>
     <!-- Rück -->
     <div>
@@ -471,11 +440,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>15 Minuten</strong> Puffer für den Weg zum Bahnhof aufgeschlagen (Unpünktlichkeit, Orientierung).
-      </div>
-      <div id="bahn-rueck-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
-        <select class="inpsm" id="bahn-rueck-work" style="width:auto;min-width:130px;color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-        <span id="bahn-rueck-work-max" style="font-size:11px;color:var(--muted)"></span>
       </div>
     </div>
     <!-- Sitzplatz -->
@@ -511,11 +475,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
       </div>
-      <div id="flug-hin-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
-        <select class="inpsm" id="flug-hin-work" style="width:auto;min-width:130px;color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-        <span id="flug-hin-work-max" style="font-size:11px;color:var(--muted)"></span>
-      </div>
     </div>
     <!-- Rück -->
     <div>
@@ -531,11 +490,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
-      </div>
-      <div id="flug-rueck-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
-        <select class="inpsm" id="flug-rueck-work" style="width:auto;min-width:130px;color:var(--purple);background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)"></select>
-        <span id="flug-rueck-work-max" style="font-size:11px;color:var(--muted)"></span>
       </div>
     </div>
     <!-- Gepäck -->
@@ -618,6 +572,44 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     </div>
   </div>
 
+  <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Laptop, Unterlagen, Telefonate)</p>
+    <div class="work-grid">
+      <div class="prio-tile" data-work="yes" id="work-tile-yes">
+        <div class="prio-tile-icon">✅</div>
+        <div class="prio-tile-label">Ja, möglich</div>
+        <div class="prio-tile-sub">Reisezeit = Arbeitszeit</div>
+      </div>
+      <div class="prio-tile active" data-work="no" id="work-tile-no">
+        <div class="prio-tile-icon">🚫</div>
+        <div class="prio-tile-label">Nein, nicht möglich</div>
+        <div class="prio-tile-sub">Reine Reisezeit</div>
+      </div>
+    </div>
+    <p id="work-travel-hint" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;display:none"></p>
+  </div>
+
+
+  <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Laptop, Unterlagen, Telefonate)</p>
+    <div class="work-grid">
+      <div class="prio-tile" data-work="yes" id="work-tile-yes">
+        <div class="prio-tile-icon">✅</div>
+        <div class="prio-tile-label">Ja, möglich</div>
+        <div class="prio-tile-sub">Reisezeit = Arbeitszeit</div>
+      </div>
+      <div class="prio-tile active" data-work="no" id="work-tile-no">
+        <div class="prio-tile-icon">🚫</div>
+        <div class="prio-tile-label">Nein, nicht möglich</div>
+        <div class="prio-tile-sub">Reine Reisezeit</div>
+      </div>
+    </div>
+    <p id="work-travel-hint" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;display:none"></p>
+  </div>
   <!-- Reisemittel (dynamisch befüllt) -->
   <div id="ov-transport-container"></div>
 
@@ -798,8 +790,8 @@ document.addEventListener("click",e=>{
 // ── Setup autocomplete ────────────────────────────────────────────────────────
 const inpStart=document.getElementById("inp-start");
 const inpZiel=document.getElementById("inp-ziel");
-inpStart.addEventListener("input",()=>{state.startGeo=null;nominatim(inpStart.value,"drop-start",h=>{state.startText=h.short;state.startGeo=h;inpStart.value=h.short;updateAutoKmHint();updateWorkSelAuto();});});
-inpZiel.addEventListener("input",()=>{state.zielGeo=null;nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();updateWorkSelAuto();});});
+inpStart.addEventListener("input",()=>{state.startGeo=null;nominatim(inpStart.value,"drop-start",h=>{state.startText=h.short;state.startGeo=h;inpStart.value=h.short;updateAutoKmHint();});});
+inpZiel.addEventListener("input",()=>{state.zielGeo=null;nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();});});
 
 // ── Swap button ───────────────────────────────────────────────────────────────
 document.getElementById("swap-btn").addEventListener("click",()=>{
@@ -850,13 +842,7 @@ document.querySelectorAll("[data-work]").forEach(function(t){
     updateWorkVisibility();
   });
 });
-function updateWorkVisibility(){
-  if(!state.canWorkDuringTravel){
-    ["bahn-hin-work-wrap","bahn-rueck-work-wrap","flug-hin-work-wrap","flug-rueck-work-wrap","auto-work-wrap"].forEach(function(id){
-      var el=document.getElementById(id); if(el) el.style.display="none";
-    });
-  }
-}
+function updateWorkVisibility(){ /* no-op: work UI now on page 3 */ }
 
 // ── Priority tiles ────────────────────────────────────────────────────────────
 document.querySelectorAll(".prio-tile").forEach(t=>{
@@ -900,11 +886,7 @@ function updateAutoKmHint(){
   if(km){const fm=Math.round(km/CAR_SPEED*60);hint.style.display="block";hint.textContent=`Geschätzte Strecke: ~${km} km · Fahrzeit: ca. ${durS(fm)}`;updateWorkSelAuto();}
   else{hint.style.display="none";}
 }
-function updateWorkSelAuto(){
-  const km=autoKm();const wrap=document.getElementById("auto-work-wrap");
-  if(km&&state.canWorkDuringTravel){const fm=Math.round(km/CAR_SPEED*60);wrap.style.display="grid";fillWorkSel("auto-work-hin",fm);fillWorkSel("auto-work-rueck",fm);}
-  else{wrap.style.display="none";}
-}
+function updateWorkSelAuto(){ /* auto work moved to page 3 overview */ }
 
 // ── Bahn/Flug time → work sel ─────────────────────────────────────────────────
 function setupWorkSel(depId,arrId,selId,wrapId,maxId){
@@ -916,10 +898,7 @@ function setupWorkSel(depId,arrId,selId,wrapId,maxId){
     else{wrap.style.display="none";}
   }));
 }
-setupWorkSel("bahn-hin-dep","bahn-hin-arr","bahn-hin-work","bahn-hin-work-wrap","bahn-hin-work-max");
-setupWorkSel("bahn-rueck-dep","bahn-rueck-arr","bahn-rueck-work","bahn-rueck-work-wrap","bahn-rueck-work-max");
-setupWorkSel("flug-hin-dep","flug-hin-arr","flug-hin-work","flug-hin-work-wrap","flug-hin-work-max");
-setupWorkSel("flug-rueck-dep","flug-rueck-arr","flug-rueck-work","flug-rueck-work-wrap","flug-rueck-work-max");
+// Work sel setup removed — work time now on page 3 overview only
 
 // ── Checkboxes ────────────────────────────────────────────────────────────────
 function setupCb(cbId,rowId,priceId,price){
