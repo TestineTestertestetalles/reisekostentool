@@ -312,29 +312,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     </div>
   </div>
 
-  <!-- Optimierungsziel -->
-  <div class="card">
-    <div class="ctitle"><span class="cdot" style="background:var(--gold)"></span> 🎯 Optimierungsziel</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Wonach soll die beste Option bewertet werden?</p>
-    <div class="prio-grid">
-      <div class="prio-tile" data-prio="cost">
-        <div class="prio-tile-icon">💶</div>
-        <div class="prio-tile-label">Günstigste</div>
-        <div class="prio-tile-sub">Kosten zählen</div>
-      </div>
-      <div class="prio-tile active" data-prio="balanced">
-        <div class="prio-tile-icon">⚖️</div>
-        <div class="prio-tile-label">Ausgewogen</div>
-        <div class="prio-tile-sub">Kosten &amp; Zeit</div>
-      </div>
-      <div class="prio-tile" data-prio="time">
-        <div class="prio-tile-icon">⚡</div>
-        <div class="prio-tile-label">Schnellste</div>
-        <div class="prio-tile-sub">Zeit zählt</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Hotel (shown dynamically) -->
   <!-- Arbeit während der Reise -->
   <div class="card">
@@ -575,7 +552,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <div class="err" id="err-s3"></div>
   <div style="height:6px"></div>
-  <button class="btnp" id="btn-s3">Günstigste Option berechnen →</button>
+  <button class="btnp" id="btn-s3">Beste Reiseoption berechnen →</button>
 </div>
 
 <!-- ════════════════════════════════════════════
@@ -593,14 +570,19 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">🎯 Optimierungsziel</span>
       <div style="margin-left:auto;position:relative">
-        <button id="prio-info-btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--br);border-radius:50%;width:22px;height:22px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center" onclick="document.getElementById('prio-info-box').classList.toggle('show')">?</button>
+        <button id="prio-info-btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--br);border-radius:50%;width:22px;height:22px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center" onclick="var b=document.getElementById('prio-info-box');b.style.display=b.style.display==='none'?'block':'none'" >?</button>
         <div id="prio-info-box" style="display:none;position:absolute;right:0;top:28px;z-index:50;width:280px;background:#1a1a2e;border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:14px;font-size:12px;color:var(--text);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
-          <strong style="color:var(--gold)">Wie wird gewichtet?</strong><br><br>
-          Der Effizienz-Score berechnet sich aus Kosten und Reisezeit:<br><br>
-          <strong style="color:#60a5fa">💶 Günstigste:</strong> Kosten zählen doppelt so stark wie Zeit.<br><br>
-          <strong style="color:#60a5fa">⚖️ Ausgewogen:</strong> Kosten und Zeit sind gleichwertig gewichtet.<br><br>
-          <strong style="color:#60a5fa">⚡ Schnellste:</strong> Reisezeit zählt doppelt so stark wie Kosten.<br><br>
-          <span style="color:var(--muted)">Niedrigster Score = beste Option. Änderungen wirken sofort.</span>
+          <strong style="color:var(--gold)">🎯 Optimierungsziel – Berechnungslogik</strong><br><br>
+          Jede Reiseoption erhält einen <strong>Effizienz-Score</strong>. Die Option mit dem <em>niedrigsten Score</em> gewinnt.<br><br>
+          Der Score berechnet sich aus:<br>
+          <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:11px">Score = (Kosten ÷ Gewicht_K) + (Reisezeit_min ÷ Gewicht_Z)</code><br><br>
+          <strong style="color:#fbbf24">💶 Günstigste:</strong><br>
+          Kosten-Gewicht 10 · Zeit-Gewicht 120 → Kosten dominieren stark<br><br>
+          <strong style="color:#fbbf24">⚖️ Ausgewogen (Standard):</strong><br>
+          Kosten-Gewicht 20 · Zeit-Gewicht 60 → ausgeglichene Bewertung<br><br>
+          <strong style="color:#fbbf24">⚡ Schnellste:</strong><br>
+          Kosten-Gewicht 40 · Zeit-Gewicht 30 → Reisezeit dominiert stark<br><br>
+          <span style="color:var(--muted);font-size:11px">Reisezeit = Fahrt + alle Transferzeiten + 90 Min. Puffer bei Flug. Hotelkosten fließen in alle Optionen gleich ein.</span>
         </div>
       </div>
     </div>
@@ -1033,6 +1015,9 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       detail:"Hinreise: Bahn ("+eur(bahnHinP)+") · Rückreise: Flug ("+eur(flugRueckP)+")",
       showTimes:true,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
+      hinTransport:"bahn",rueckTransport:"flug",
+      hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
+      rueckDepSt:getSt("flug-rueck-dep-station"),rueckArrSt:getSt("flug-rueck-arr-station"),
       hinDep:bahnHinDep,hinArr:gs("bahn-hin-arr"),hinDur:dmH,
       rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR,
       hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
@@ -1056,6 +1041,9 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       detail:"Hinreise: Flug ("+eur(flugHinP)+") · Rückreise: Bahn ("+eur(bahnRueckP)+")",
       showTimes:true,
       trHinStart:trHS,trHinEnd:trHE,trRueckStart:trRS,trRueckEnd:trRE,
+      hinTransport:"flug",rueckTransport:"bahn",
+      hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
+      rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
       hinDep:flugHinDep,hinArr:gs("flug-hin-arr"),hinDur:dmH,
       rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR,
       hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
@@ -1127,19 +1115,33 @@ function renderCard(item,isBest){
   let timesRows="";
   const hasAnyTime=item.showTimes||item.trHinStart>0||item.trHinEnd>0||item.trRueckStart>0||item.trRueckEnd>0;
   // Smart station labels
+  // For combos: use hinTransport/rueckTransport; for pure: use transport
+  var tHin   = item.hinTransport   || item.transport || "auto";
+  var tRueck = item.rueckTransport || item.transport || "auto";
+  function tLabel(mode, role, st) {
+    if (mode === "bahn") {
+      if (role === "hinStart")   return "Fahrt von Zuhause zum Bahnhof " + (st || "");
+      if (role === "hinEnd")     return "Fahrt vom Bahnhof " + (st || "") + " zum Ziel";
+      if (role === "rueckStart") return "Fahrt zum Bahnhof " + (st || "");
+      if (role === "rueckEnd")   return "Fahrt vom Bahnhof " + (st || "") + " nach Hause";
+    } else if (mode === "flug") {
+      if (role === "hinStart")   return "Fahrt zum Flughafen " + (st || "");
+      if (role === "hinEnd")     return "Fahrt vom Flughafen " + (st || "") + " zum Ziel";
+      if (role === "rueckStart") return "Fahrt zum Flughafen " + (st || "");
+      if (role === "rueckEnd")   return "Fahrt vom Flughafen " + (st || "") + " nach Hause";
+    } else {
+      if (role === "hinStart")   return "Fahrt von Zuhause zum Fuhrpark";
+      if (role === "hinEnd")     return "Fahrt vom Parkplatz zum Ziel";
+      if (role === "rueckStart") return "Fahrt zum Fahrzeug";
+      if (role === "rueckEnd")   return "Fahrt vom Fuhrpark nach Hause";
+    }
+    return "";
+  }
   var tLbl = {
-    hinStart:  item.transport==="bahn" ? "Weg von Zuhause nach "+(item.hinDepSt||"Bahnhof")
-             : item.transport==="flug" ? "Weg zum Flughafen "+(item.hinDepSt||"")
-             : "Fahrt von Zuhause zum Fuhrpark",
-    hinEnd:    item.transport==="bahn" ? "Weg vom Bahnhof "+(item.hinArrSt||"")+" zum Ziel"
-             : item.transport==="flug" ? "Weg vom Flughafen "+(item.hinArrSt||"")+" zum Ziel"
-             : "Weg vom Parkplatz zum Ziel",
-    rueckStart:item.transport==="bahn" ? "Weg zum Bahnhof "+(item.rueckDepSt||"")
-             : item.transport==="flug" ? "Weg zum Flughafen "+(item.rueckDepSt||"")
-             : "Weg zum Fahrzeug",
-    rueckEnd:  item.transport==="bahn" ? "Weg vom Bahnhof "+(item.rueckArrSt||"")+" nach Hause"
-             : item.transport==="flug" ? "Weg vom Flughafen "+(item.rueckArrSt||"")+" nach Hause"
-             : "Weg vom Fuhrpark nach Hause"
+    hinStart:   tLabel(tHin,   "hinStart",   item.hinDepSt   || ""),
+    hinEnd:     tLabel(tHin,   "hinEnd",     item.hinArrSt   || ""),
+    rueckStart: tLabel(tRueck, "rueckStart", item.rueckDepSt || ""),
+    rueckEnd:   tLabel(tRueck, "rueckEnd",   item.rueckArrSt || "")
   };
 
   if(hasAnyTime){
@@ -1203,7 +1205,7 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
   updatePersonsUI();
   g("licence-check").checked=false;g("licence-cb").classList.remove("checked");
   g("licence-note").textContent="Kein gültiger Führerschein → Auto-Option wird ausgeschlossen";
-  document.querySelectorAll(".prio-tile").forEach(t=>t.classList.toggle("active",t.dataset.prio==="balanced"));
+  // prio-tile reset handled via data-prio-r tiles on results page
   document.querySelectorAll("[data-work]").forEach(function(t){ t.classList.toggle("active", t.dataset.work==="no"); });
   var wh = document.getElementById("work-travel-hint"); if(wh) wh.style.display="none";
   state.canWorkDuringTravel = false;
