@@ -507,8 +507,11 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
         <div><label class="flbl">Preis €</label><input class="inpsm" type="number" id="flug-hin-price" min="0" step="0.01" placeholder="—"></div>
       </div>
       <div class="g2" style="margin-top:8px">
-        <div><label class="flbl-blue">Weg zum Flughafen inkl. mind. 60 Min. Puffer (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-hin-ts" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg zum Flughafen (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-hin-ts" min="0" step="1" placeholder="0"></div>
         <div><label class="flbl-blue">Weg vom Flughafen zum Ziel (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-hin-te" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
+        ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
       </div>
       <div id="flug-hin-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
@@ -527,6 +530,9 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       <div class="g2" style="margin-top:8px">
         <div><label class="flbl-blue">Weg zum Rückflug-Flughafen (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-rueck-ts" min="0" step="1" placeholder="0"></div>
         <div><label class="flbl-blue">Weg vom Heimatflughafen nach Hause (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-rueck-te" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
+        ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
       </div>
       <div id="flug-rueck-work-wrap" style="margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--purple);font-weight:700">💼 Arbeitszeit:</span>
@@ -932,12 +938,13 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
 
   // FLUG
   const fhP=gv("flug-hin-price"),frP=gv("flug-rueck-price");
+  const FLUG_PUFFER=90; // Sicherheitskontrolle + Gate + Boarding
   if(fhP||frP){
     const hinDep=gs("flug-hin-dep"),hinArr=gs("flug-hin-arr");
     const rueckDep=gs("flug-rueck-dep"),rueckArr=gs("flug-rueck-arr");
     const dm=tMin(hinDep,hinArr),dmR=tMin(rueckDep,rueckArr);
     const trHS=gv("flug-hin-ts"),trHE=gv("flug-hin-te"),trRS=gv("flug-rueck-ts"),trRE=gv("flug-rueck-te");
-    const dH=dm+trHS+trHE,dR=dmR+trRS+trRE;
+    const dH=dm+trHS+trHE+(hinDep?FLUG_PUFFER:0),dR=dmR+trRS+trRE+(rueckDep?FLUG_PUFFER:0);
     const wH=parseInt(gs("flug-hin-work"))||0,wR=parseInt(gs("flug-rueck-work"))||0;
     const bagH=g("bag-hin").checked?BAG:0,bagR=g("bag-rueck").checked?BAG:0;
     const extras=bagH+bagR;
@@ -980,7 +987,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"kombi-bahn-flug",icon:"🚆✈️",label:"Bahn hin · Flug zurück",
       total,hotel:hotelTotal,nights,extras:seatH+bagR,
-      dH:dmH+trHS+trHE,dR:dmR+trRS+trRE,wH:0,wR:0,
+      dH:dmH+trHS+trHE,dR:dmR+trRS+trRE+FLUG_PUFFER,wH:0,wR:0,
       score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
       badge:"Kombination",badgeCls:"rbm",
       costDetail:eur(bahnHinP)+" Bahn + "+eur(flugRueckP)+" Flug"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
@@ -1000,7 +1007,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"kombi-flug-bahn",icon:"✈️🚆",label:"Flug hin · Bahn zurück",
       total,hotel:hotelTotal,nights,extras:bagH+seatR,
-      dH:dmH+trHS+trHE,dR:dmR+trRS+trRE,wH:0,wR:0,
+      dH:dmH+trHS+trHE+FLUG_PUFFER,dR:dmR+trRS+trRE,wH:0,wR:0,
       score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
       badge:"Kombination",badgeCls:"rbm",
       costDetail:eur(flugHinP)+" Flug + "+eur(bahnRueckP)+" Bahn"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
@@ -1312,6 +1319,12 @@ function parseOmioCombined(transport) {
     rueckEl.placeholder = 'z.B. ' + (totalForGroup/2).toFixed(0) + ' (Summe: ' + totalForGroup.toFixed(0) + ' €)';
     // Activate price-split mirroring for this transport
     activatePriceMirror(transport);
+    // Show total in badge immediately (transport costs only, no hotel)
+    var badge = document.getElementById(transport+'-cost-badge');
+    if (badge) {
+      badge.textContent = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(totalForGroup);
+      badge.title = 'Gesamtpreis aus Omio (ohne Hotel)';
+    }
   }
 
   var msg = '✓ Zeiten eingetragen: ' + found.join(' · ');
@@ -1385,16 +1398,16 @@ function updateCostBadge(id, val) {
 }
 function updateAutoBadge() {
   var k = parseFloat(document.getElementById('auto-kosten').value) || 0;
-  var nights = calcNights(state.hD, state.rD);
-  updateCostBadge('auto-cost-badge', k + nights * state.hotelPrice);
+  // Hotel excluded – shown separately on result page
+  updateCostBadge('auto-cost-badge', k);
 }
 function updateBahnBadge() {
   var hp = parseFloat(document.getElementById('bahn-hin-price').value)   || 0;
   var rp = parseFloat(document.getElementById('bahn-rueck-price').value) || 0;
   var sh = document.getElementById('seat-hin').checked   ? 5.50 : 0;
   var sr = document.getElementById('seat-rueck').checked ? 5.50 : 0;
-  var nights = calcNights(state.hD, state.rD);
-  var total = hp + rp + sh + sr + nights * state.hotelPrice;
+  // Hotel excluded – shown separately on result page
+  var total = hp + rp + sh + sr;
   updateCostBadge('bahn-cost-badge', total > 0 ? total : 0);
 }
 function updateFlugBadge() {
@@ -1402,8 +1415,8 @@ function updateFlugBadge() {
   var rp = parseFloat(document.getElementById('flug-rueck-price').value) || 0;
   var bh = document.getElementById('bag-hin').checked   ? 20 : 0;
   var br = document.getElementById('bag-rueck').checked ? 20 : 0;
-  var nights = calcNights(state.hD, state.rD);
-  var total = hp + rp + bh + br + nights * state.hotelPrice;
+  // Hotel excluded – shown separately on result page
+  var total = hp + rp + bh + br;
   updateCostBadge('flug-cost-badge', total > 0 ? total : 0);
 }
 // Hook cost badge updates to relevant inputs
