@@ -48,6 +48,7 @@ h1 span{color:var(--gold);}
 .flbl{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;display:block;}
 input,select{width:100%;background:var(--s2);border:1.5px solid var(--br);border-radius:var(--rs);padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s,background 0.2s;}
 input:focus,select:focus{border-color:rgba(251,191,36,0.6);background:rgba(255,255,255,0.09);}
+
 input::placeholder{color:rgba(255,255,255,0.2);}
 input[type=date],input[type=time]{color-scheme:dark;}
 input[type=number]::-webkit-inner-spin-button{opacity:0.4;}
@@ -230,6 +231,23 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 }
 .print-header{display:none;border-bottom:2px solid #f59e0b;padding-bottom:10px;margin-bottom:16px;}
 .print-footer{display:none;border-top:1px solid #ddd;margin-top:16px;padding-top:10px;font-size:9pt;color:#888;}
+/* ── Required field states (must be last for specificity) ── */
+input.req-field,
+select.req-field{
+  border-color:rgba(251,191,36,0.6)!important;
+  background:rgba(251,191,36,0.09)!important;
+  box-shadow:0 0 0 1px rgba(251,191,36,0.2)!important;
+}
+input.req-field.invalid,
+select.req-field.invalid{
+  border-color:rgba(248,113,113,0.8)!important;
+  background:rgba(248,113,113,0.1)!important;
+  box-shadow:0 0 0 1px rgba(248,113,113,0.3)!important;
+}
+input.req-field:focus{
+  border-color:rgba(251,191,36,0.9)!important;
+  background:rgba(251,191,36,0.12)!important;
+}
 </style>
 </head>
 <body>
@@ -266,7 +284,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
         <label class="flbl">Startort</label>
         <div class="acwrap">
           <div class="ac-inp-wrap">
-            <input id="inp-start" type="text" placeholder="Startort eingeben…" autocomplete="off">
+            <input id="inp-start" type="text" class="req-field" placeholder="Startort eingeben…" autocomplete="off">
             <span class="ac-icon">📍</span>
           </div>
           <div class="drop" id="drop-start"></div>
@@ -281,7 +299,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
         <label class="flbl">Zielort</label>
         <div class="acwrap">
           <div class="ac-inp-wrap">
-            <input id="inp-ziel" type="text" placeholder="Zielort eingeben…" autocomplete="off">
+            <input id="inp-ziel" type="text" class="req-field" placeholder="Zielort eingeben…" autocomplete="off">
             <span class="ac-icon">🎯</span>
           </div>
           <div class="drop" id="drop-ziel"></div>
@@ -294,7 +312,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <div class="card">
     <div class="ctitle"><span class="cdot" style="background:var(--gold)"></span> ↗ Hinreise – gewünschte Ankunft</div>
     <div class="g2">
-      <div><label class="flbl">Datum</label><input id="hD" type="date"></div>
+      <div><label class="flbl">Datum</label><input id="hD" type="date" class="req-field"></div>
       <div><label class="flbl">Uhrzeit (Ankunft)</label><input id="hT" type="time" value="10:00"></div>
     </div>
   </div>
@@ -303,7 +321,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <div class="card">
     <div class="ctitle"><span class="cdot" style="background:var(--blue)"></span> ↙ Rückreise – geplante Abfahrt</div>
     <div class="g2">
-      <div><label class="flbl">Datum</label><input id="rD" type="date"></div>
+      <div><label class="flbl">Datum</label><input id="rD" type="date" class="req-field"></div>
       <div><label class="flbl">Uhrzeit (Abfahrt)</label><input id="rT" type="time" value="17:00"></div>
     </div>
   </div>
@@ -333,7 +351,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <!-- hotel managed on page 3 -->
   <input type="hidden" id="hotel-price" value="100">
 
-
   <div style="height:8px"></div>
   <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
   <a class="btn-omio" href="https://www.omio.at" target="_blank" rel="noopener noreferrer">👉 Bei Omio suchen ↗</a>
@@ -354,14 +371,14 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <div class="tblock auto" style="position:relative">
     <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span><span class="cost-badge" id="auto-cost-badge">—</span></div>
     <label class="flbl">Gesamtkosten Hin + Rück (€)</label>
-    <input class="inpsm" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
+    <input class="inpsm req-field" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
     <div id="auto-km-hint" style="font-size:11px;color:var(--muted);margin-top:5px;display:none"></div>
     <!-- Hinreise transfer -->
     <div style="margin-top:12px">
       <div class="tleg-lbl">↗ Hinreise – Transferzeiten</div>
       <div class="g2">
-        <div><label class="flbl-blue">Weg von Zuhause zum Fuhrpark (min)</label><input class="inpsm inpsm-blue" type="number" id="auto-tr-hs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Parkplatz zum Ziel (min)</label><input class="inpsm inpsm-blue" type="number" id="auto-tr-he" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg von Zuhause zum Fuhrpark (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-hs" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Parkplatz zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-he" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>10 Minuten</strong> für das Übernahmeprozedere am Fuhrpark aufgeschlagen.
@@ -371,8 +388,8 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div style="margin-top:10px">
       <div class="tleg-lbl">↙ Rückreise – Transferzeiten</div>
       <div class="g2">
-        <div><label class="flbl-blue">Weg zum Fahrzeug (min)</label><input class="inpsm inpsm-blue" type="number" id="auto-tr-rs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Fuhrpark nach Hause (min)</label><input class="inpsm inpsm-blue" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg zum Fahrzeug (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-rs" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Fuhrpark nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>20 Minuten</strong> für Tanken und Abgabeprozedere am Fuhrpark aufgeschlagen.
@@ -405,13 +422,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinreise</div>
       <div class="g3">
-        <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-hin-dep"></div>
-        <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-hin-arr"></div>
-        <div><label class="flbl">Preis €</label><input class="inpsm" type="number" id="bahn-hin-price" min="0" step="0.01" placeholder="—"></div>
+        <div><label class="flbl">Abfahrt</label><input class="inpsm req-field" type="time" id="bahn-hin-dep"></div>
+        <div><label class="flbl">Ankunft</label><input class="inpsm req-field" type="time" id="bahn-hin-arr"></div>
+        <div><label class="flbl">Preis €</label><input class="inpsm req-field" type="number" id="bahn-hin-price" min="0" step="0.01" placeholder="—"></div>
       </div>
       <div class="g2" style="margin-top:8px">
-        <div><label class="flbl-blue">Weg von Zuhause zum Bahnhof (min)</label><input class="inpsm inpsm-blue" type="number" id="bahn-hin-ts" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Bahnhof zum Ziel (min)</label><input class="inpsm inpsm-blue" type="number" id="bahn-hin-te" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg von Zuhause zum Bahnhof (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="bahn-hin-ts" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Bahnhof zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="bahn-hin-te" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>15 Minuten</strong> Puffer für die Fahrt zum Bahnhof aufgeschlagen (Unpünktlichkeit, Orientierung, Ticketkauf).
@@ -421,13 +438,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div>
       <div class="tleg-lbl">↙ Rückreise</div>
       <div class="g3">
-        <div><label class="flbl">Abfahrt</label><input class="inpsm" type="time" id="bahn-rueck-dep"></div>
-        <div><label class="flbl">Ankunft</label><input class="inpsm" type="time" id="bahn-rueck-arr"></div>
-        <div><label class="flbl">Preis €</label><input class="inpsm" type="number" id="bahn-rueck-price" min="0" step="0.01" placeholder="—"></div>
+        <div><label class="flbl">Abfahrt</label><input class="inpsm req-field" type="time" id="bahn-rueck-dep"></div>
+        <div><label class="flbl">Ankunft</label><input class="inpsm req-field" type="time" id="bahn-rueck-arr"></div>
+        <div><label class="flbl">Preis €</label><input class="inpsm req-field" type="number" id="bahn-rueck-price" min="0" step="0.01" placeholder="—"></div>
       </div>
       <div class="g2" style="margin-top:8px">
-        <div><label class="flbl-blue">Weg zum Rückfahrt-Bahnhof (min)</label><input class="inpsm inpsm-blue" type="number" id="bahn-rueck-ts" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Heimatbahnhof nach Hause (min)</label><input class="inpsm inpsm-blue" type="number" id="bahn-rueck-te" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg zum Rückfahrt-Bahnhof (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="bahn-rueck-ts" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Heimatbahnhof nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="bahn-rueck-te" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>15 Minuten</strong> Puffer für den Weg zum Bahnhof aufgeschlagen (Unpünktlichkeit, Orientierung).
@@ -455,13 +472,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div style="margin-bottom:16px">
       <div class="tleg-lbl">↗ Hinflug</div>
       <div class="g3">
-        <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-hin-dep"></div>
-        <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-hin-arr"></div>
-        <div><label class="flbl">Preis €</label><input class="inpsm" type="number" id="flug-hin-price" min="0" step="0.01" placeholder="—"></div>
+        <div><label class="flbl">Abflug</label><input class="inpsm req-field" type="time" id="flug-hin-dep"></div>
+        <div><label class="flbl">Landung</label><input class="inpsm req-field" type="time" id="flug-hin-arr"></div>
+        <div><label class="flbl">Preis €</label><input class="inpsm req-field" type="number" id="flug-hin-price" min="0" step="0.01" placeholder="—"></div>
       </div>
       <div class="g2" style="margin-top:8px">
-        <div><label class="flbl-blue">Weg zum Flughafen (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-hin-ts" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Flughafen zum Ziel (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-hin-te" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg zum Flughafen (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="flug-hin-ts" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Flughafen zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="flug-hin-te" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
@@ -471,13 +488,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <div>
       <div class="tleg-lbl">↙ Rückflug</div>
       <div class="g3">
-        <div><label class="flbl">Abflug</label><input class="inpsm" type="time" id="flug-rueck-dep"></div>
-        <div><label class="flbl">Landung</label><input class="inpsm" type="time" id="flug-rueck-arr"></div>
-        <div><label class="flbl">Preis €</label><input class="inpsm" type="number" id="flug-rueck-price" min="0" step="0.01" placeholder="—"></div>
+        <div><label class="flbl">Abflug</label><input class="inpsm req-field" type="time" id="flug-rueck-dep"></div>
+        <div><label class="flbl">Landung</label><input class="inpsm req-field" type="time" id="flug-rueck-arr"></div>
+        <div><label class="flbl">Preis €</label><input class="inpsm req-field" type="number" id="flug-rueck-price" min="0" step="0.01" placeholder="—"></div>
       </div>
       <div class="g2" style="margin-top:8px">
-        <div><label class="flbl-blue">Weg zum Rückflug-Flughafen (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-rueck-ts" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Heimatflughafen nach Hause (min)</label><input class="inpsm inpsm-blue" type="number" id="flug-rueck-te" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg zum Rückflug-Flughafen (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="flug-rueck-ts" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Heimatflughafen nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="flug-rueck-te" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>90 Minuten</strong> für Sicherheitskontrolle, Weg zum Gate und Boarding aufgeschlagen.
@@ -514,12 +531,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <input type="hidden" id="flug-rueck-dep-station" value="">
   <input type="hidden" id="flug-rueck-arr-station" value="">
 
-
   <div class="err" id="err-s3"></div>
   <div style="height:6px"></div>
   <button class="btnp" id="btn-s3">Reiseübersicht anzeigen →</button>
 </div>
-
 
 <!-- ════════════════════════════════════════════
      SCREEN 3 – ÜBERSICHT
@@ -561,16 +576,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     </div>
   </div>
 
-
-
-
   <!-- Reisemittel (dynamisch befüllt) -->
   <div id="ov-transport-container"></div>
 
-
-
   <!-- Hotel moved into Reisezeitraum card -->
-
 
   <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
   <div class="card" style="margin-bottom:10px">
@@ -890,13 +899,64 @@ document.querySelectorAll("[data-back]").forEach(btn=>{
 });
 
 // ── Screen 1 → 2 ─────────────────────────────────────────────────────────────
+
+// ── Field validation helpers ──────────────────────────────────────────────────
+function markInvalid(ids){
+  ids.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.classList.add('invalid');
+  });
+}
+function clearInvalid(){
+  document.querySelectorAll('.req-field.invalid').forEach(function(el){
+    el.classList.remove('invalid');
+  });
+}
+function isBlockComplete(prefix){
+  // Returns true if a transport block has all required fields filled
+  var fields = prefix==='auto'
+    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    : prefix==='bahn'
+    ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
+       'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
+       'bahn-hin-ts','bahn-hin-te','bahn-rueck-ts','bahn-rueck-te']
+    : ['flug-hin-dep','flug-hin-arr','flug-hin-price',
+       'flug-rueck-dep','flug-rueck-arr','flug-rueck-price',
+       'flug-hin-ts','flug-hin-te','flug-rueck-ts','flug-rueck-te'];
+  return fields.every(function(id){
+    var el=document.getElementById(id);
+    return el && el.value && el.value.trim()!=='';
+  });
+}
+function getMissingInBlock(prefix){
+  var fields = prefix==='auto'
+    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    : prefix==='bahn'
+    ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
+       'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
+       'bahn-hin-ts','bahn-hin-te','bahn-rueck-ts','bahn-rueck-te']
+    : ['flug-hin-dep','flug-hin-arr','flug-hin-price',
+       'flug-rueck-dep','flug-rueck-arr','flug-rueck-price',
+       'flug-hin-ts','flug-hin-te','flug-rueck-ts','flug-rueck-te'];
+  return fields.filter(function(id){
+    var el=document.getElementById(id);
+    return !el || !el.value || el.value.trim()==='';
+  });
+}
+
 document.getElementById("btn-s1").addEventListener("click",()=>{
   state.startText=inpStart.value;state.zielText=inpZiel.value;
   state.hD=document.getElementById("hD").value;state.hT=document.getElementById("hT").value;
   state.rD=document.getElementById("rD").value;state.rT=document.getElementById("rT").value;
   const err=document.getElementById("err-s1");
-  if(!state.startText||!state.zielText||!state.hD||!state.rD){err.textContent="⚠ Bitte alle Felder ausfüllen.";err.classList.add("show");return;}
-  if(!state.startGeo||!state.zielGeo){err.textContent="⚠ Bitte Orte aus der Vorschlagsliste wählen.";err.classList.add("show");return;}
+  clearInvalid();
+  var missingS1=[];
+  if(!state.startText) missingS1.push('inp-start');
+  if(!state.zielText)  missingS1.push('inp-ziel');
+  if(!state.hD)        missingS1.push('hD');
+  if(!state.rD)        missingS1.push('rD');
+  if(missingS1.length){markInvalid(missingS1);err.textContent="⚠ Bitte alle rot markierten Felder ausfüllen.";err.classList.add("show");return;}
+  if(!state.startGeo||!state.zielGeo){markInvalid(['inp-start','inp-ziel']);err.textContent="⚠ Bitte Orte aus der Vorschlagsliste wählen.";err.classList.add("show");return;}
   err.classList.remove("show");
   updateAutoOverlay();
   // Update rpills
@@ -1014,6 +1074,22 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
   }
 
   const err=document.getElementById("err-s3");
+  clearInvalid();
+  // Validate: at least one COMPLETE block required
+  var autoComplete  = isBlockComplete('auto') && state.hasLicence;
+  var bahnComplete  = isBlockComplete('bahn');
+  var flugComplete  = isBlockComplete('flug');
+  if(!autoComplete && !bahnComplete && !flugComplete){
+    // Mark all three blocks' empty fields as invalid
+    var missing=[];
+    ['auto','bahn','flug'].forEach(function(p){
+      if(p==='auto'&&!state.hasLicence) return; // skip auto if no licence
+      getMissingInBlock(p).forEach(function(id){ missing.push(id); });
+    });
+    markInvalid(missing);
+    err.textContent="⚠ Bitte mindestens einen vollständigen Block ausfüllen (alle Felder inkl. Transferzeiten).";
+    err.classList.add("show");return;
+  }
   // Validate: need at least one price entered (any transport)
   // Also check: if bahn or flug has times but no price → warn
   const bahnHinP = gv("bahn-hin-price"), bahnRueckP = gv("bahn-rueck-price");
@@ -1088,6 +1164,11 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
   err.classList.remove("show");
   items.sort((a,b)=>a.score-b.score);
   _lastItems = items.slice();
+  // Always reset to "Ausgewogen" on new calculation
+  state.priority = "balanced";
+  document.querySelectorAll('[data-prio-r]').forEach(function(x){
+    x.classList.toggle('active', x.dataset.prioR==='balanced');
+  });
   buildOverview(_lastItems);
   showScreen("s-overview");
 });
@@ -1660,7 +1741,6 @@ function updateOvHotel(){
   document.getElementById('ov-hotel-price').value=state.hotelPrice;
   document.getElementById('ov-hotel-total').textContent='= '+new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(total);
 }
-
 
 // ── Work-time segment table helpers ──────────────────────────────────────────
 function buildWorkOpts15(maxMin, currentVal){
