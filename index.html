@@ -330,18 +330,9 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <!-- Hotel (shown dynamically) -->
   <!-- Arbeit während der Reise -->
   <!-- Work card moved to page 3 (s-overview) -->
+  <!-- hotel managed on page 3 -->
+  <input type="hidden" id="hotel-price" value="100">
 
-  <div class="hotel-box" id="hotel-box-s1" style="display:none">
-    <div class="ctitle" style="margin-bottom:10px"><span class="cdot" style="background:var(--orange)"></span> 🏨 Hotel – automatisch erkannt</div>
-    <div class="hotel-row">
-      <div class="hotel-chip" id="hotel-chip-s1">0 Übernachtungen</div>
-      <span style="color:var(--muted)">×</span>
-      <input class="inpsm" type="number" id="hotel-price" value="100" min="0" step="1" style="max-width:90px">
-      <span style="font-size:12px;color:var(--muted)">€ / Nacht</span>
-      <span class="hotel-total" id="hotel-total-s1">= 0 €</span>
-    </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:7px">Wird zu allen Optionen addiert. Preis anpassbar.</div>
-  </div>
 
   <div style="height:8px"></div>
   <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
@@ -501,6 +492,14 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   </div>
 
   <!-- Hotel S3 -->
+  <!-- Work-time fields: selects needed by ovWorkRow + calcRes (hidden, populated by overview) -->
+  <select id="bahn-hin-work" style="display:none"></select>
+  <select id="bahn-rueck-work" style="display:none"></select>
+  <select id="flug-hin-work" style="display:none"></select>
+  <select id="flug-rueck-work" style="display:none"></select>
+  <select id="auto-work-hin" style="display:none"></select>
+  <select id="auto-work-rueck" style="display:none"></select>
+
   <!-- Gate work-time virtual fields (used by overview work table) -->
   <input type="hidden" id="flug-hin-gate-work" value="0">
   <input type="hidden" id="flug-rueck-gate-work" value="0">
@@ -515,16 +514,6 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   <input type="hidden" id="flug-rueck-dep-station" value="">
   <input type="hidden" id="flug-rueck-arr-station" value="">
 
-  <div class="hotel-box" id="hotel-box-s3" style="display:none">
-    <div class="ctitle" style="margin-bottom:10px"><span class="cdot" style="background:var(--orange)"></span> 🏨 Hotel – wird automatisch addiert</div>
-    <div class="hotel-row">
-      <div class="hotel-chip" id="hotel-chip-s3"></div>
-      <span style="color:var(--muted)">×</span>
-      <span id="hotel-price-s3" style="font-size:13px;color:var(--text);font-family:'DM Mono',monospace"></span>
-      <span style="font-size:12px;color:var(--muted)">€ / Nacht</span>
-      <span class="hotel-total" id="hotel-total-s3"></span>
-    </div>
-  </div>
 
   <div class="err" id="err-s3"></div>
   <div style="height:6px"></div>
@@ -861,17 +850,11 @@ document.getElementById("hotel-price").addEventListener("input",()=>{
 function updateHotelUI(){
   const nights=calcNights(state.hD,state.rD);
   const total=nights*state.hotelPrice;
-  // S1
-  const hb=document.getElementById("hotel-box-s1");
-  hb.style.display=nights>0?"block":"none";
-  document.getElementById("hotel-chip-s1").textContent=nights+" Übernachtung"+(nights>1?"en":"");
-  document.getElementById("hotel-total-s1").textContent="= "+eurR(total);
-  // S3
-  const hb3=document.getElementById("hotel-box-s3");
-  hb3.style.display=nights>0?"block":"none";
-  document.getElementById("hotel-chip-s3").textContent=nights+" Übernachtung"+(nights>1?"en":"");
-  document.getElementById("hotel-price-s3").textContent=state.hotelPrice;
-  document.getElementById("hotel-total-s3").textContent="= "+eurR(total);
+  // S1: hotel managed on page 3 overview
+  const hpEl=document.getElementById("hotel-price");
+  if(hpEl) hpEl.value=state.hotelPrice;
+
+  // S3: hotel UI moved to page 3 overview
   // S2 (hotel-box-s2 removed with screen 2)
 }
 
@@ -1880,4 +1863,7 @@ updateHotelUI();
 updateAutoOverlay();
 </script>
 </body>
-</html>
+</html  // S1: hotel managed on page 3 overview
+  const hpEl=document.getElementById("hotel-price");
+  if(hpEl) hpEl.value=state.hotelPrice;
+  >
