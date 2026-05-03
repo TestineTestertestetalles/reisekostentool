@@ -578,35 +578,17 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       </div>
     </div>
     <p id="work-travel-hint" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;display:none"></p>
-  </div>
-
-
-  <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
-  <div class="card" style="margin-bottom:10px">
-    <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Laptop, Unterlagen, Telefonate)</p>
-    <div class="work-grid">
-      <div class="prio-tile" data-work="yes" id="work-tile-yes">
-        <div class="prio-tile-icon">✅</div>
-        <div class="prio-tile-label">Ja, möglich</div>
-        <div class="prio-tile-sub">Reisezeit = Arbeitszeit</div>
-      </div>
-      <div class="prio-tile active" data-work="no" id="work-tile-no">
-        <div class="prio-tile-icon">🚫</div>
-        <div class="prio-tile-label">Nein, nicht möglich</div>
-        <div class="prio-tile-sub">Reine Reisezeit</div>
-      </div>
+    <!-- Arbeitszeit-Tabelle erscheint hier wenn Ja gewählt -->
+    <div id="ov-work-section" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--br)">
+      <div id="ov-work-container"></div>
     </div>
-    <p id="work-travel-hint" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;display:none"></p>
   </div>
+
+
   <!-- Reisemittel (dynamisch befüllt) -->
   <div id="ov-transport-container"></div>
 
-  <!-- Arbeitszeit-Tabelle (nur wenn canWorkDuringTravel) -->
-  <div id="ov-work-section" style="display:none">
-    <div class="slbl" style="margin-top:4px">💼 Arbeitszeit während der Reise</div>
-    <div id="ov-work-container"></div>
-  </div>
+
 
   <!-- Hotel moved into Reisezeitraum card -->
 
@@ -828,7 +810,10 @@ document.querySelectorAll("[data-work]").forEach(function(t){
     var hint = document.getElementById("work-travel-hint");
     hint.textContent = workHints[t.dataset.work];
     hint.style.display = "block";
-    updateWorkVisibility();
+    // Rebuild work table with current items when tile is clicked on page 3
+    if(_lastItems && _lastItems.length > 0){
+      buildOverview(_lastItems);
+    }
   });
 });
 function updateWorkVisibility(){ /* no-op: work UI now on page 3 */ }
@@ -1676,8 +1661,9 @@ function updateOvHotel(){
 
 // ── Work-time segment table helpers ──────────────────────────────────────────
 function buildWorkOpts15(maxMin, currentVal){
-  var opts='<option value="0">0 min</option>';
-  for(var m=15; m<=maxMin; m+=15){
+  // 10-minute steps, max = actual segment duration
+  var opts='<option value="0">Keine</option>';
+  for(var m=10; m<=maxMin; m+=10){
     var h=Math.floor(m/60), r=m%60;
     var lbl = h>0?(r>0?h+'h '+r+'min':h+'h'):r+'min';
     opts+='<option value="'+m+'"'+(m===currentVal?' selected':'')+'>'+lbl+'</option>';
