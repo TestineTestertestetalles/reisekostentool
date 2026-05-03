@@ -189,6 +189,15 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .times-val{color:var(--text);font-family:'DM Mono',monospace;}
 .times-val.blue{color:var(--blue);}
 .work-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
+/* Overview work-time table */
+.ov-work-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+.ov-work-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.ov-work-table tr:last-child td{border-bottom:none;}
+.ov-work-seg{color:var(--text);font-weight:500;}
+.ov-work-dur{color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;}
+.ov-work-sel{color:var(--purple);background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.3);border-radius:5px;padding:3px 6px;font-size:11px;font-family:inherit;cursor:pointer;}
+.ov-work-sel:disabled{color:var(--muted);background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.05);cursor:default;opacity:0.5;}
+.ov-work-na{color:var(--muted);font-size:11px;font-style:italic;}
 .work-val{font-size:13px;font-weight:700;color:var(--purple);font-family:'DM Mono',monospace;}
 .sbar{margin-bottom:10px;}
 .sbarlbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
@@ -538,6 +547,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   </div>
 
   <!-- Hotel S3 -->
+  <!-- Gate work-time virtual fields (used by overview work table) -->
+  <input type="hidden" id="flug-hin-gate-work" value="0">
+  <input type="hidden" id="flug-rueck-gate-work" value="0">
+
   <!-- Hidden station name fields populated by parser -->
   <input type="hidden" id="bahn-hin-dep-station" value="">
   <input type="hidden" id="bahn-hin-arr-station" value="">
@@ -607,6 +620,12 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <!-- Reisemittel (dynamisch befüllt) -->
   <div id="ov-transport-container"></div>
+
+  <!-- Arbeitszeit-Tabelle (nur wenn canWorkDuringTravel) -->
+  <div id="ov-work-section" style="display:none">
+    <div class="slbl" style="margin-top:4px">💼 Arbeitszeit während der Reise</div>
+    <div id="ov-work-container"></div>
+  </div>
 
   <!-- Hotel moved into Reisezeitraum card -->
 
@@ -1023,7 +1042,8 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const dm=tMin(hinDep,hinArr),dmR=tMin(rueckDep,rueckArr);
     const trHS=gv("flug-hin-ts"),trHE=gv("flug-hin-te"),trRS=gv("flug-rueck-ts"),trRE=gv("flug-rueck-te");
     const dH=dm+trHS+trHE+(hinDep?FLUG_PUFFER:0),dR=dmR+trRS+trRE+(rueckDep?FLUG_PUFFER:0);
-    const wH=parseInt(gs("flug-hin-work"))||0,wR=parseInt(gs("flug-rueck-work"))||0;
+    const wH=(parseInt(gs("flug-hin-work"))||0)+(parseInt(gs("flug-hin-gate-work"))||0);
+    const wR=(parseInt(gs("flug-rueck-work"))||0)+(parseInt(gs("flug-rueck-gate-work"))||0);
     const bagH=g("bag-hin").checked?BAG:0,bagR=g("bag-rueck").checked?BAG:0;
     const extras=bagH+bagR;
     const transport=fhP+frP;const total=transport+extras+hotelTotal;
@@ -1276,7 +1296,7 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
   ['bahn-rueck-te','bahn-rueck-ts','flug-rueck-te','flug-rueck-ts','auto-tr-re','auto-tr-rs'].forEach(function(id){
     var el=document.getElementById(id); if(el) delete el.dataset.userEdited;
   });
-  ["inp-start","inp-ziel","hD","rD","auto-kosten",
+  ["inp-start","inp-ziel","hD","rD","auto-kosten","flug-hin-gate-work","flug-rueck-gate-work",
    "bahn-hin-dep","bahn-hin-arr","bahn-hin-price","bahn-rueck-dep","bahn-rueck-arr","bahn-rueck-price",
    "flug-hin-dep","flug-hin-arr","flug-hin-price","flug-rueck-dep","flug-rueck-arr","flug-rueck-price",
    "auto-tr-hs","auto-tr-he","auto-tr-rs","auto-tr-re","bahn-hin-ts","bahn-hin-te","bahn-rueck-ts","bahn-rueck-te",
@@ -1691,6 +1711,35 @@ function updateOvHotel(){
   document.getElementById('ov-hotel-total').textContent='= '+new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(total);
 }
 
+
+// ── Work-time segment table helpers ──────────────────────────────────────────
+function buildWorkOpts15(maxMin, currentVal){
+  var opts='<option value="0">0 min</option>';
+  for(var m=15; m<=maxMin; m+=15){
+    var h=Math.floor(m/60), r=m%60;
+    var lbl = h>0?(r>0?h+'h '+r+'min':h+'h'):r+'min';
+    opts+='<option value="'+m+'"'+(m===currentVal?' selected':'')+'>'+lbl+'</option>';
+  }
+  return opts;
+}
+function ovWorkRow(icon, label, durMin, fieldId, disabled){
+  var durStr = durMin>0 ? durS(durMin) : '—';
+  if(disabled || durMin<=0){
+    return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td>'
+      +'<td class="ov-work-dur">'+durStr+'</td>'
+      +'<td><span class="ov-work-na">nicht arbeitsfähig</span></td></tr>';
+  }
+  var cur = parseInt(document.getElementById(fieldId)?document.getElementById(fieldId).value:0)||0;
+  return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td>'
+    +'<td class="ov-work-dur">'+durStr+'</td>'
+    +'<td><select class="ov-work-sel" data-field-id="'+fieldId+'" onchange="syncWorkField(this.dataset.fieldId,this.value)">'
+    +buildWorkOpts15(durMin, cur)+'</select></td></tr>';
+}
+function syncWorkField(fieldId, val){
+  var el=document.getElementById(fieldId);
+  if(el){ el.value=val; el.dispatchEvent(new Event('change')); }
+}
+
 function buildOverview(items){
   var nights=calcNights(state.hD,state.rD);
   // Zeitraum
@@ -1748,6 +1797,71 @@ function buildOverview(items){
   });
   con.innerHTML=html||'<p style="color:var(--muted);font-size:13px">Keine Optionen eingetragen.</p>';
   updateOvHotel();
+
+  // ── Arbeitszeit-Tabelle ────────────────────────────────────────────────────
+  var workSection = document.getElementById('ov-work-section');
+  var workCon     = document.getElementById('ov-work-container');
+  if(!workSection || !workCon) return;
+
+  if(!state.canWorkDuringTravel){
+    workSection.style.display='none';
+    return;
+  }
+  workSection.style.display='block';
+
+  var workHtml='';
+  items.filter(function(it){ return it.id==='bahn'||it.id==='flug'; }).forEach(function(item){
+    var isBahn = item.id==='bahn';
+    var icon   = isBahn?'🚆':'✈️';
+    var label  = item.label;
+    // Hin segment durations
+    var trHinStart  = item.trHinStart||0;
+    var trHinEnd    = item.trHinEnd||0;
+    var mainHinDur  = item.hinDur||0;
+    // Rück segment durations
+    var trRueckStart= item.trRueckStart||0;
+    var trRueckEnd  = item.trRueckEnd||0;
+    var mainRueckDur= item.rueckDur||0;
+    // Gate time for flug (90 min puffer split: 60 min gate, 30 min security buffer)
+    var gateDur = isBahn?0:60; // 60 min usable at gate out of 90-min puffer
+
+    var hinDepSt   = item.hinDepSt   || '';
+    var hinArrSt   = item.hinArrSt   || '';
+    var rueckDepSt = item.rueckDepSt || '';
+    var rueckArrSt = item.rueckArrSt || '';
+
+    workHtml += '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px">';
+    workHtml += '<div style="font-size:13px;font-weight:700;margin-bottom:8px">'+icon+' '+label+' – Hinreise</div>';
+    workHtml += '<table class="ov-work-table">';
+    if(isBahn){
+      workHtml += ovWorkRow('🚌','Weg zum Bahnhof '+(hinDepSt||''), trHinStart, '', true);
+      workHtml += ovWorkRow('🚆','Fahrt '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''), mainHinDur, 'bahn-hin-work', false);
+      workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
+    } else {
+      workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(hinDepSt||''), trHinStart, '', true);
+      workHtml += ovWorkRow('🛂','Am Gate (Wartezeit)', gateDur, 'flug-hin-gate-work', false);
+      workHtml += ovWorkRow('✈️','Flugzeit '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''), mainHinDur, 'flug-hin-work', false);
+      workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
+    }
+    workHtml += '</table>';
+
+    workHtml += '<div style="font-size:13px;font-weight:700;margin:12px 0 8px">'+icon+' '+label+' – Rückreise</div>';
+    workHtml += '<table class="ov-work-table">';
+    if(isBahn){
+      workHtml += ovWorkRow('🚌','Weg zum Bahnhof '+(rueckDepSt||''), trRueckStart, '', true);
+      workHtml += ovWorkRow('🚆','Fahrt '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''), mainRueckDur, 'bahn-rueck-work', false);
+      workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
+    } else {
+      workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(rueckDepSt||''), trRueckStart, '', true);
+      workHtml += ovWorkRow('🛂','Am Gate (Wartezeit)', gateDur, 'flug-rueck-gate-work', false);
+      workHtml += ovWorkRow('✈️','Flugzeit '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''), mainRueckDur, 'flug-rueck-work', false);
+      workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
+    }
+    workHtml += '</table></div>';
+  });
+
+  if(!workHtml) workHtml='<p style="color:var(--muted);font-size:13px">Keine Verbindungszeiten eingetragen.</p>';
+  workCon.innerHTML=workHtml;
 }
 
 function updateOvPrice(itemId, newVal){
