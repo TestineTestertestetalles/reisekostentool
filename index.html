@@ -1748,6 +1748,327 @@ document.getElementById('btn-s-overview').addEventListener('click',function(){
 });
 
 
+
+// ── Omio parser helpers ───────────────────────────────────────────────────────
+function padTime(t){
+  var parts=String(t).split(':');
+  var h=parseInt(parts[0]),m=parseInt(parts[1]||0);
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+
+function showParseResult(el,type,msg,duration){
+  el.className='parse-result '+type;
+  el.innerHTML='';
+  var lines=msg.split('\n');
+  lines.forEach(function(line,i){
+    if(i>0) el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(line));
+  });
+  el.style.display='block';
+  var ms=duration||(msg.length>80?12000:8000);
+  setTimeout(function(){el.style.display='none';},ms);
+}
+
+function parseOmio(transport,leg){
+  var pasteId=transport+'-'+leg+'-paste';
+  var resultId=transport+'-'+leg+'-parse-result';
+  var text=document.getElementById(pasteId)&&document.getElementById(pasteId).value.trim();
+  var result=document.getElementById(resultId);
+  if(!text){showParseResult(result,'err','Bitte erst Text einfügen.');return;}
+  var depId=transport+'-'+leg+'-dep';
+  var arrId=transport+'-'+leg+'-arr';
+  var priceId=transport+'-'+leg+'-price';
+  var found=[];
+  var depOmio=text.match(/Abreise\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/i);
+  var arrOmio=text.match(/Ankunft\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/i);
+  var priceOmio=text.match(/Preis\s+f[üu]r\s+\d+\s+Reiseg[ae]st[a-z]*\s*:\s*([\d.,]+)\s*€/i);
+  if(depOmio||arrOmio||priceOmio){
+    if(depOmio){var depT=padTime(depOmio[2]);document.getElementById(depId).value=depT;document.getElementById(depId).dispatchEvent(new Event('change'));found.push('Abfahrt: '+depT+' ('+depOmio[1].trim()+')');}
+    if(arrOmio){var arrT=padTime(arrOmio[2]);document.getElementById(arrId).value=arrT;document.getElementById(arrId).dispatchEvent(new Event('change'));found.push('Ankunft: '+arrT+' ('+arrOmio[1].trim()+')');}
+    if(priceOmio){var price=parseFloat(priceOmio[1].replace(',','.'));document.getElementById(priceId).value=price.toFixed(2);found.push('Preis: '+price.toFixed(2).replace('.',',')+' €');}
+    showParseResult(result,'ok','✓ '+found.join(' · '));return;
+  }
+  var timeRx=/\b(\d{1,2})[:.](\ d{2})\b/g,times=[],m;
+  while((m=timeRx.exec(text))!==null){var h=parseInt(m[1]),mn=parseInt(m[2]);if(h<=23&&mn<=59)times.push(padTime(h+':'+mn));}
+  var priceRx=/(?:ab\s+|EUR\s*|€\s*)([\d]+(?:[.,]\d{1,2})?)|(\d+(?:[.,]\d{1,2})?)\s*(?:€|EUR)/gi,prices=[];
+  while((m=priceRx.exec(text))!==null){var raw=(m[1]||m[2]).replace(',','.');var val=parseFloat(raw);if(val>0&&val<10000)prices.push(val);}
+  if(times.length>=1){document.getElementById(depId).value=times[0];document.getElementById(depId).dispatchEvent(new Event('change'));found.push('Abfahrt: '+times[0]);}
+  if(times.length>=2){var arrTime=times.find(function(t){return t!==times[0];})||times[1];document.getElementById(arrId).value=arrTime;document.getElementById(arrId).dispatchEvent(new Event('change'));found.push('Ankunft: '+arrTime);}
+  if(prices.length>=1){var p=Math.min.apply(null,prices);document.getElementById(priceId).value=p.toFixed(2);found.push('Preis: '+p.toFixed(2).replace('.',',')+' €');}
+  if(!found.length){showParseResult(result,'err','Nicht erkannt. Tipp: Vollständigen Omio-Teilen-Text einfügen.');}
+  else{showParseResult(result,'ok','✓ Erkannt (allgemein): '+found.join(' · '));}
+}
+
+function parseOmioCombined(transport){
+  var pasteId=transport+'-combined-paste';
+  var resultId=transport+'-combined-parse-result';
+  var el=document.getElementById(pasteId);
+  var text=el?el.value.trim():'';
+  var result=document.getElementById(resultId);
+  if(!text){showParseResult(result,'err','Bitte erst Text einfügen.');return;}
+  var depRx=/Abreise\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
+  var arrRx=/Ankunft\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
+  var priceRx=/Preis\s+f[üu]r\s+(\d+)\s+Reiseg[ae]st[a-z]*\s*:\s*([\d.,]+)\s*€/i;
+  var deps=[],arrs=[],m;
+  while((m=depRx.exec(text))!==null) deps.push({station:m[1].trim(),time:padTime(m[2])});
+  while((m=arrRx.exec(text))!==null) arrs.push({station:m[1].trim(),time:padTime(m[2])});
+  var priceMatch=text.match(priceRx);
+  if(!deps.length&&!arrs.length){showParseResult(result,'err','Keine strukturierten Omio-Daten erkannt.');return;}
+  var found=[];
+  var isRoundTrip=deps.length>=2&&arrs.length>=2;
+  if(deps.length>=1){
+    document.getElementById(transport+'-hin-dep').value=deps[0].time;
+    document.getElementById(transport+'-hin-dep').dispatchEvent(new Event('change'));
+    var hinDepSt=document.getElementById(transport+'-hin-dep-station');
+    if(hinDepSt) hinDepSt.value=deps[0].station;
+    found.push('↗ Abfahrt: '+deps[0].time+' ('+deps[0].station+')');
+  }
+  if(arrs.length>=1){
+    document.getElementById(transport+'-hin-arr').value=arrs[0].time;
+    document.getElementById(transport+'-hin-arr').dispatchEvent(new Event('change'));
+    var hinArrSt=document.getElementById(transport+'-hin-arr-station');
+    if(hinArrSt) hinArrSt.value=arrs[0].station;
+    found.push('Ankunft: '+arrs[0].time+' ('+arrs[0].station+')');
+  }
+  if(isRoundTrip){
+    document.getElementById(transport+'-rueck-dep').value=deps[1].time;
+    document.getElementById(transport+'-rueck-dep').dispatchEvent(new Event('change'));
+    var rueckDepSt=document.getElementById(transport+'-rueck-dep-station');
+    if(rueckDepSt) rueckDepSt.value=deps[1].station;
+    found.push('↙ Abfahrt: '+deps[1].time+' ('+deps[1].station+')');
+    document.getElementById(transport+'-rueck-arr').value=arrs[1].time;
+    document.getElementById(transport+'-rueck-arr').dispatchEvent(new Event('change'));
+    var rueckArrSt=document.getElementById(transport+'-rueck-arr-station');
+    if(rueckArrSt) rueckArrSt.value=arrs[1].station;
+    found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
+  }
+  var priceNote='';
+  if(priceMatch){
+    var pax=parseInt(priceMatch[1]);
+    var total=parseFloat(priceMatch[2].replace(',','.'));
+    var totalForGroup=(total/pax)*state.persons;
+    priceNote='⚠ Gesamtpreis: '+totalForGroup.toFixed(2).replace('.',',')+'€';
+    if(state.persons!==pax) priceNote+=' (umgerechnet für '+state.persons+' Person'+(state.persons>1?'en':'')+')';
+    priceNote+=' — Hinpreis eintragen → Rückpreis wird automatisch berechnet';
+    var hinEl=document.getElementById(transport+'-hin-price');
+    var rueckEl=document.getElementById(transport+'-rueck-price');
+    if(hinEl){hinEl.value='';hinEl.dataset.priceTotal=totalForGroup.toFixed(2);hinEl.placeholder='z.B. '+(totalForGroup/2).toFixed(0)+' (Summe: '+totalForGroup.toFixed(0)+' €)';}
+    if(rueckEl){rueckEl.value='';rueckEl.dataset.priceTotal=totalForGroup.toFixed(2);rueckEl.placeholder='z.B. '+(totalForGroup/2).toFixed(0)+' (Summe: '+totalForGroup.toFixed(0)+' €)';}
+    activatePriceMirror(transport);
+    var badge=document.getElementById(transport+'-cost-badge');
+    if(badge){badge.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(totalForGroup);badge.title='Gesamtpreis aus Omio (ohne Hotel)';}
+  }
+  var msg='✓ Zeiten eingetragen: '+found.join(' · ');
+  if(!isRoundTrip&&deps.length===1) msg+=' — nur Hinreise erkannt';
+  if(priceNote) msg+='\n'+priceNote;
+  showParseResult(result,'ok',msg);
+}
+
+function activatePriceMirror(transport){
+  var hinEl=document.getElementById(transport+'-hin-price');
+  var rueckEl=document.getElementById(transport+'-rueck-price');
+  if(!hinEl||!rueckEl) return;
+  function calcOther(srcEl,dstEl){
+    var total=parseFloat(srcEl.dataset.priceTotal);
+    if(isNaN(total)||total<=0) return;
+    var entered=parseFloat(srcEl.value);
+    if(isNaN(entered)||entered<0){dstEl.value='';return;}
+    var other=Math.max(0,total-entered);
+    dstEl.value=other.toFixed(2);
+    if(transport==='bahn') updateBahnBadge();
+    if(transport==='flug') updateFlugBadge();
+  }
+  var newHin=hinEl.cloneNode(true);
+  var newRueck=rueckEl.cloneNode(true);
+  hinEl.parentNode.replaceChild(newHin,hinEl);
+  rueckEl.parentNode.replaceChild(newRueck,rueckEl);
+  newHin.addEventListener('input',function(){calcOther(newHin,newRueck);updateBahnBadge();updateFlugBadge();});
+  newRueck.addEventListener('input',function(){calcOther(newRueck,newHin);updateBahnBadge();updateFlugBadge();});
+}
+
+// ── Transfer time mirroring ───────────────────────────────────────────────────
+function mirrorTransfer(changedId,mirrorId){
+  var src=document.getElementById(changedId);
+  var dst=document.getElementById(mirrorId);
+  if(!src||!dst) return;
+  src.addEventListener('input',function(){
+    if(dst.dataset.userEdited!=='1') dst.value=src.value;
+  });
+  dst.addEventListener('input',function(){dst.dataset.userEdited='1';});
+  src.addEventListener('change',function(){
+    if(dst.dataset.userEdited!=='1') dst.value=src.value;
+  });
+}
+mirrorTransfer('bahn-hin-ts','bahn-rueck-te');
+mirrorTransfer('bahn-hin-te','bahn-rueck-ts');
+mirrorTransfer('flug-hin-ts','flug-rueck-te');
+mirrorTransfer('flug-hin-te','flug-rueck-ts');
+mirrorTransfer('auto-tr-hs','auto-tr-re');
+mirrorTransfer('auto-tr-he','auto-tr-rs');
+
+// ── Omio Guide ────────────────────────────────────────────────────────────────
+function toggleGuide(){
+  var btn=document.getElementById('guide-toggle-btn');
+  var box=document.getElementById('guide-box');
+  btn.classList.toggle('open');
+  box.classList.toggle('open');
+}
+function switchGuideTab(tab){
+  document.getElementById('tab-bahn').classList.toggle('active',tab==='bahn');
+  document.getElementById('tab-flug').classList.toggle('active',tab==='flug');
+  document.getElementById('guide-bahn').classList.toggle('active',tab==='bahn');
+  document.getElementById('guide-flug').classList.toggle('active',tab==='flug');
+}
+
+// ── Overview helpers ──────────────────────────────────────────────────────────
+function getSt(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function updateOvHotel(){
+  var nights=calcNights(state.hD,state.rD);
+  var total=nights*state.hotelPrice;
+  var box=document.getElementById('ov-hotel');
+  if(!box) return;
+  box.style.display=nights>0?'block':'none';
+  document.getElementById('ov-hotel-chip').textContent=nights+' Übernachtung'+(nights>1?'en':'');
+  document.getElementById('ov-hotel-price').value=state.hotelPrice;
+  document.getElementById('ov-hotel-total').textContent='= '+new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(total);
+}
+
+function updateOvPrice(itemId,newVal){
+  var parsed=parseFloat(newVal)||0;
+  if(itemId==='auto'){var el=document.getElementById('auto-kosten');if(el){el.value=parsed.toFixed(2);updateAutoBadge();}}
+  else if(itemId==='bahn'){var half=(parsed/2).toFixed(2);var h=document.getElementById('bahn-hin-price'),r=document.getElementById('bahn-rueck-price');if(h)h.value=half;if(r)r.value=half;updateBahnBadge();}
+  else if(itemId==='flug'){var half2=(parsed/2).toFixed(2);var h2=document.getElementById('flug-hin-price'),r2=document.getElementById('flug-rueck-price');if(h2)h2.value=half2;if(r2)r2.value=half2;updateFlugBadge();}
+}
+function updateOvPriceById(itemId,newVal){updateOvPrice(itemId,newVal);}
+
+// ── Work table helpers ────────────────────────────────────────────────────────
+function buildWorkOpts15(maxMin,currentVal){
+  var opts='<option value="0">Keine</option>';
+  for(var m=10;m<=maxMin;m+=10){
+    var h=Math.floor(m/60),r=m%60;
+    var lbl=h>0?(r>0?h+'h '+r+'min':h+'h'):r+'min';
+    opts+='<option value="'+m+'"'+(m===currentVal?' selected':'')+'>'+lbl+'</option>';
+  }
+  return opts;
+}
+function ovWorkRow(icon,label,durMin,fieldId,disabled){
+  var durStr=durMin>0?durS(durMin):'—';
+  if(disabled||durMin<=0){
+    return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td><td class="ov-work-dur">'+durStr+'</td><td><span class="ov-work-na">nicht arbeitsfähig</span></td></tr>';
+  }
+  var cur=parseInt(document.getElementById(fieldId)?document.getElementById(fieldId).value:0)||0;
+  return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td><td class="ov-work-dur">'+durStr+'</td>'
+    +'<td><select class="ov-work-sel" data-field-id="'+fieldId+'" onchange="syncWorkField(this.dataset.fieldId,this.value)">'
+    +buildWorkOpts15(durMin,cur)+'</select></td></tr>';
+}
+function syncWorkField(fieldId,val){var el=document.getElementById(fieldId);if(el){el.value=val;el.dispatchEvent(new Event('change'));}}
+
+
+function updateWorkVisibility(){/* work UI on page 3 */}
+
+function buildOverview(items){
+  var nights=calcNights(state.hD,state.rD);
+  var zr=document.getElementById('ov-zeitraum');
+  if(zr){
+    zr.innerHTML='<div>↗ <strong>Hinreise:</strong> '+fDT(state.hD,state.hT)+'</div>'
+      +'<div>↙ <strong>Rückreise:</strong> '+fDT(state.rD,state.rT)+'</div>';
+  }
+  var rp=document.getElementById('rpill-overview');
+  if(rp) rp.innerHTML='<strong>'+state.startText+'</strong> <span class="rarrow">⇄</span> <strong>'+state.zielText+'</strong>'
+    +'<span class="rmeta">↗ '+fD(state.hD)+' · ↙ '+fD(state.rD)+'</span>';
+  var con=document.getElementById('ov-transport-container');
+  if(!con) return;
+  var ORDER={auto:0,bahn:1,flug:2};
+  var sortedItems=items.filter(function(item){return item.id==='auto'||item.id==='bahn'||item.id==='flug';})
+    .sort(function(a,b){return (ORDER[a.id]||9)-(ORDER[b.id]||9);});
+  var html='';
+  var icons={auto:'🚗',bahn:'🚆',flug:'✈️'};
+  sortedItems.forEach(function(item){
+    var tColor={auto:'rgba(251,191,36,0.15)',bahn:'rgba(52,211,153,0.12)',flug:'rgba(96,165,250,0.12)'}[item.transport||item.id]||'rgba(255,255,255,0.06)';
+    var borderColor={auto:'rgba(251,191,36,0.3)',bahn:'rgba(52,211,153,0.3)',flug:'rgba(96,165,250,0.3)'}[item.transport||item.id]||'var(--br)';
+    html+='<div style="background:'+tColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:14px 16px;margin-bottom:10px">';
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    html+='<span style="font-size:20px">'+(icons[item.id]||'🚌')+'</span>';
+    html+='<strong style="font-size:14px">'+item.label+'</strong>';
+    var itemId=item.id;
+    var transportCostRaw=item.total-(item.hotel||0)-(item.extras||0);
+    html+='<div style="margin-left:auto;display:flex;align-items:center;gap:6px">';
+    html+='<span style="font-size:11px;color:var(--muted)">Gesamtpreis:</span>';
+    html+='<input class="inpsm" type="number" min="0" step="0.01" style="max-width:90px;text-align:right" '
+      +'data-item-id="'+itemId+'" value="'+transportCostRaw.toFixed(2)+'" '
+      +'oninput="updateOvPriceById(this.dataset.itemId,this.value)">';
+    html+='<span style="font-size:11px;color:var(--muted)">€</span></div>';
+    html+='</div>';
+    if(item.showTimes&&item.hinDep){
+      html+='<div style="font-size:12px;color:var(--muted);line-height:1.8">';
+      html+='↗ '+item.hinDep+' → '+item.hinArr+' ('+durS(item.hinDur)+')';
+      if(item.rueckDep) html+='&nbsp;&nbsp;↙ '+item.rueckDep+' → '+item.rueckArr+' ('+durS(item.rueckDur)+')';
+      html+='</div>';
+    }
+    var tparts=[];
+    if(item.trHinStart>0) tparts.push('Anreise Hin: '+durS(item.trHinStart));
+    if(item.trHinEnd>0) tparts.push('Transfer Ziel: '+durS(item.trHinEnd));
+    if(item.trRueckStart>0) tparts.push('Anreise Rück: '+durS(item.trRueckStart));
+    if(item.trRueckEnd>0) tparts.push('Transfer Heim: '+durS(item.trRueckEnd));
+    if(tparts.length) html+='<div style="font-size:11px;color:var(--blue);margin-top:4px">🚌 '+tparts.join(' · ')+'</div>';
+    html+='</div>';
+  });
+  con.innerHTML=html||'<p style="color:var(--muted);font-size:13px">Keine Optionen eingetragen.</p>';
+  updateOvHotel();
+
+  // Work table
+  var workSection=document.getElementById('ov-work-section');
+  var workCon=document.getElementById('ov-work-container');
+  if(!workSection||!workCon){return;}
+  if(!state.canWorkDuringTravel){workSection.style.display='none';return;}
+  workSection.style.display='block';
+  var workHtml='';
+  var workItems=items.filter(function(it){return it.id==='bahn'||it.id==='flug';})
+    .sort(function(a,b){return (a.id==='bahn'?0:1)-(b.id==='bahn'?0:1);});
+  workItems.forEach(function(item){
+    var isBahn=item.id==='bahn';
+    var icon=isBahn?'🚆':'✈️';
+    var trHinStart=item.trHinStart||0,trHinEnd=item.trHinEnd||0;
+    var trRueckStart=item.trRueckStart||0,trRueckEnd=item.trRueckEnd||0;
+    var mainHinDur=item.hinDur||0,mainRueckDur=item.rueckDur||0;
+    var gateDur=isBahn?0:60;
+    var hinDepSt=item.hinDepSt||'',hinArrSt=item.hinArrSt||'';
+    var rueckDepSt=item.rueckDepSt||'',rueckArrSt=item.rueckArrSt||'';
+    workHtml+='<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px">';
+    workHtml+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">'+icon+' '+item.label+' – Hinreise</div>';
+    workHtml+='<table class="ov-work-table">';
+    if(isBahn){
+      workHtml+=ovWorkRow('🚌','Weg zum Bahnhof '+(hinDepSt||''),trHinStart,'',true);
+      workHtml+=ovWorkRow('🚆','Fahrt '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''),mainHinDur,'bahn-hin-work',false);
+      workHtml+=ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''),trHinEnd,'',true);
+    } else {
+      var noTimesHint=mainHinDur===0?' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>':'';
+      workHtml+=ovWorkRow('🚌','Weg zum Flughafen '+(hinDepSt||''),trHinStart,'',true);
+      workHtml+=ovWorkRow('🛂','Am Gate'+noTimesHint,gateDur,'flug-hin-gate-work',false);
+      workHtml+=ovWorkRow('✈️','Flugzeit '+(hinDepSt&&hinArrSt?hinDepSt+' → '+hinArrSt:(hinDepSt||'')),mainHinDur,'flug-hin-work',mainHinDur===0);
+      workHtml+=ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''),trHinEnd,'',true);
+    }
+    workHtml+='</table>';
+    workHtml+='<div style="font-size:13px;font-weight:700;margin:12px 0 8px">'+icon+' '+item.label+' – Rückreise</div>';
+    workHtml+='<table class="ov-work-table">';
+    if(isBahn){
+      workHtml+=ovWorkRow('🚌','Weg zum Bahnhof '+(rueckDepSt||''),trRueckStart,'',true);
+      workHtml+=ovWorkRow('🚆','Fahrt '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''),mainRueckDur,'bahn-rueck-work',false);
+      workHtml+=ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''),trRueckEnd,'',true);
+    } else {
+      var noTimesHintR=mainRueckDur===0?' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>':'';
+      workHtml+=ovWorkRow('🚌','Weg zum Flughafen '+(rueckDepSt||''),trRueckStart,'',true);
+      workHtml+=ovWorkRow('🛂','Am Gate'+noTimesHintR,gateDur,'flug-rueck-gate-work',false);
+      workHtml+=ovWorkRow('✈️','Flugzeit '+(rueckDepSt&&rueckArrSt?rueckDepSt+' → '+rueckArrSt:(rueckDepSt||'')),mainRueckDur,'flug-rueck-work',mainRueckDur===0);
+      workHtml+=ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''),trRueckEnd,'',true);
+    }
+    workHtml+='</table></div>';
+  });
+  if(!workHtml) workHtml='<p style="color:var(--muted);font-size:13px">Keine Verbindungszeiten eingetragen.</p>';
+  workCon.innerHTML=workHtml;
+}
+
 // ── Results page prio tiles ──────────────────────────────────────────────────
 document.addEventListener('click', function(e){
   var infoBox = document.getElementById('prio-info-box');
