@@ -1602,9 +1602,73 @@ function renderCard(item,isBest,allItems){
   var displayAvgCost = showTotal ? allItems.reduce(function(s,x){return s+x.total;},0)/allItems.length
     : allItems.reduce(function(s,x){return s+(x.total/(x.persons||1));},0)/allItems.length;
   var displayDiff = Math.round((displayCost - displayAvgCost) / displayAvgCost * 100);
-  const scoreExpl = "Kosten: "+eurR(displayCost)+(showTotal?" gesamt":" /Pers.")+" ("+Math.abs(displayDiff)+"% "+(displayDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(displayAvgCost))+(showTotal?" gesamt":" /Pers.")+")"
-    +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
-    +" · Effizienz-Score: "+bw+"% ("+prioName+")";
+  // ── Score explanation: reference-based comparison ──────────────────────────
+  var scoreExpl;
+  if(allItems.length <= 1){
+    // Only one option available
+    scoreExpl = "Diese Option ist die einzige verfügbare · Effizienz-Score: "+bw+"% ("+prioName+")";
+  } else {
+    // Platz 1 compares with Platz 2; all others compare with Platz 1
+    var isBestItem = (allItems[0].id === item.id && allItems[0].label === item.label);
+    var refItem = isBestItem ? allItems[1] : allItems[0];
+
+    // Helper: cost per person for any item
+    function calcDisplayCost(it, showTot){
+      var p = it.persons || 1;
+      var tc = it.total - (it.hotel||0) - (it.extras||0);
+      var cpp = (it.transport==="auto")
+        ? tc/p + (it.hotel>0 ? it.hotel/p : 0)
+        : (it.pricePerPerson||0) + (it.hotel>0 ? it.hotel/p : 0) + (it.extras>0 ? it.extras/p : 0);
+      return showTot ? it.total : cpp;
+    }
+    var refDisplayCost = calcDisplayCost(refItem, showTotal);
+    var refEffTime = Math.max(0, ((refItem.dH||0)+(refItem.dR||0)) - ((refItem.wH||0)+(refItem.wR||0))*WORK_EFFICIENCY);
+    var myEffTime  = Math.max(0, totalMin - ((item.wH||0)+(item.wR||0))*WORK_EFFICIENCY);
+
+    var costDeltaAbs = Math.abs(displayCost - refDisplayCost);
+    var costBetter   = displayCost < refDisplayCost;
+    var timeDeltaMin = Math.abs(myEffTime - refEffTime);
+    var timeBetter   = myEffTime < refEffTime;
+    var refLabel     = refItem.label;
+
+    // Cost sentence
+    var costSentence = "Kosten: "+eurR(displayCost)+(showTotal?" gesamt":" /Person");
+    if(Math.round(costDeltaAbs) > 0){
+      costSentence += " ("+eurR(Math.round(costDeltaAbs))+(costBetter?" günstiger":" teurer")+" als "+refLabel+")";
+    } else {
+      costSentence += " (gleich wie "+refLabel+")";
+    }
+
+    // Time sentence
+    var timeSentence = "Reisezeit: "+durS(totalMin);
+    if(Math.round(timeDeltaMin) >= 5){
+      timeSentence += " ("+durS(Math.round(timeDeltaMin))+(timeBetter?" schneller":" langsamer")+" als "+refLabel+")";
+    } else {
+      timeSentence += " (nahezu gleich wie "+refLabel+")";
+    }
+
+    // Reversal explanation: only for best item when a parameter is worse than Platz 2
+    var reversalLine = "";
+    if(isBestItem && Math.round(costDeltaAbs) > 0 && Math.round(timeDeltaMin) >= 5){
+      if(!costBetter && timeBetter){
+        // More expensive but faster → wins on time
+        reversalLine = "⚖️ Obwohl "+eurR(Math.round(costDeltaAbs))+" teurer als "+refLabel
+          +", gewinnt diese Option durch "+durS(Math.round(timeDeltaMin))
+          +" kürzere Reisezeit — das Ziel '"+prioName+"' gewichtet Schnelligkeit stärker.";
+      } else if(costBetter && !timeBetter){
+        // Cheaper but slower → wins on cost
+        reversalLine = "⚖️ Obwohl "+durS(Math.round(timeDeltaMin))+" langsamer als "+refLabel
+          +", gewinnt diese Option durch "+eurR(Math.round(costDeltaAbs))
+          +" geringere Kosten — das Ziel '"+prioName+"' gewichtet den Preis stärker.";
+      }
+    }
+
+    scoreExpl = costSentence+" · "+timeSentence;
+    if(reversalLine){
+      scoreExpl += '<br><span style="color:var(--gold);font-size:11px">'+reversalLine+'</span>';
+    }
+    scoreExpl += " · Effizienz-Score: "+bw+"% ("+prioName+")";
+  }
 
 
 
