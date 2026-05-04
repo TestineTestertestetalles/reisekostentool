@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -1157,27 +1158,11 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   document.getElementById("rpill-prices").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">↗ ${fD(state.hD)} ${state.hT} Uhr &nbsp;·&nbsp; ↙ ${fD(state.rD)} ${state.rT} Uhr</span>`;
   const nights=calcNights(state.hD,state.rD);
   document.getElementById("rpill-results").innerHTML=`<strong>${state.startText}</strong> <span class="rarrow">⇄</span> <strong>${state.zielText}</strong> <span class="rmeta">Hin: ${fD(state.hD)} · Rück: ${fD(state.rD)}${nights>0?" · "+nights+" Übernachtung"+(nights>1?"en":"")+" 🏨":""} · ${state.persons} Person${state.persons>1?"en":""}</span>`;
-  // Update persons hint in bahn/flug headers
+  // Page 2: persons info — bahn/flug show "pro Person" hint only
   var ph=document.getElementById("bahn-persons-hint");
-  if(ph) ph.textContent=state.persons>1?" Preis pro Person, × "+state.persons+" Personen":"";
+  if(ph) ph.textContent=state.persons>1?" (Preis pro Person)":"";
   var phf=document.getElementById("flug-persons-hint");
-  if(phf) phf.textContent=state.persons>1?" Preis pro Person, × "+state.persons+" Personen":"";
-  // Auto hint
-  var numCarsHint=Math.ceil(state.persons/5);
-  var autoHdr=document.getElementById("auto-cost-badge");
-  // Note in auto block header
-  var autoBadgeNote=document.getElementById("auto-persons-note");
-  if(!autoBadgeNote){
-    var aHdrEl=document.getElementById("auto-cost-badge");
-    if(aHdrEl){
-      var noteSpan=document.createElement("span");
-      noteSpan.id="auto-persons-note";
-      noteSpan.style.cssText="font-size:11px;color:var(--muted)";
-      aHdrEl.parentNode.insertBefore(noteSpan,aHdrEl);
-    }
-  }
-  var apn=document.getElementById("auto-persons-note");
-  if(apn) apn.textContent=state.persons>1?(numCarsHint>1?" "+numCarsHint+" Autos (max. 5/Auto)":" "+state.persons+" Personen, 1 Auto"):"";
+  if(phf) phf.textContent=state.persons>1?" (Preis pro Person)":"";
   updateHotelUI();
   showScreen("s-prices");
 });
@@ -1501,30 +1486,31 @@ function renderCard(item,isBest,allItems){
   const costWord = costDiff<=-10?"deutlich günstiger":costDiff<=-2?"günstiger":costDiff<=2?"durchschnittlich":costDiff<=10?"teurer":"deutlich teurer";
   const timeWord = timeDiff<=-10?"deutlich schneller":timeDiff<=-2?"schneller":timeDiff<=2?"durchschnittlich":timeDiff<=10?"langsamer":"deutlich langsamer";
   const prioName = state.priority==="cost"?"Kosten-Effizienz":state.priority==="time"?"Zeit-Effizienz":"Gesamt-Effizienz";
-  const scoreExpl = "Kosten: "+eurR(displayCost)+(showTotal?" gesamt":" /Pers.")+" ("+Math.abs(displayDiff)+"% "+(displayDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(displayAvgCost))+(showTotal?" gesamt":" /Pers.")+")"
-    +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
-    +" · Effizienz-Score: "+bw+"% ("+prioName+")";
+  // Per-person cost calculation
+  const persons = item.persons || 1;
+  const transportCost = item.total - (item.hotel||0) - (item.extras||0);
+  const costPerPerson = (item.transport === "auto")
+    ? (item.total / persons)
+    : (item.pricePerPerson||0)
+      + (item.hotel>0 ? (item.hotel/persons) : 0)
+      + (item.extras>0 ? (item.extras/persons) : 0);
+  const autoTransportPerPerson = (item.transport==="auto") ? (transportCost/persons) : 0;
+  const hotelPerPerson = item.hotel>0 ? (item.hotel/persons) : 0;
+
+  // Cost view toggle (depends on costPerPerson, must come after)
+  
   const cardId = "score-info-"+item.id.replace(/[^a-z0-9]/g,"");
   var showTotal = (state.costView === "total");
   var displayCost = showTotal ? item.total : costPerPerson;
   var displayAvgCost = showTotal ? allItems.reduce(function(s,x){return s+x.total;},0)/allItems.length
     : allItems.reduce(function(s,x){return s+(x.total/(x.persons||1));},0)/allItems.length;
   var displayDiff = Math.round((displayCost - displayAvgCost) / displayAvgCost * 100);
+  const scoreExpl = "Kosten: "+eurR(displayCost)+(showTotal?" gesamt":" /Pers.")+" ("+Math.abs(displayDiff)+"% "+(displayDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(displayAvgCost))+(showTotal?" gesamt":" /Pers.")+")"
+    +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
+    +" · Effizienz-Score: "+bw+"% ("+prioName+")";
 
-  // Per-person cost calculation
-  const persons = item.persons || 1;
-  // Transport cost per person:
-  // - Auto: total car cost / persons (shared vehicle)
-  // - Bahn/Flug: pricePerPerson already = cost per person (excl. hotel/extras)
-  const transportCost = item.total - (item.hotel||0) - (item.extras||0);
-  const costPerPerson = (item.transport === "auto")
-    ? (item.total / persons)          // auto: everything divided by persons
-    : (item.pricePerPerson||0)        // bahn/flug: per-person ticket price
-      + (item.hotel>0 ? (item.hotel/persons) : 0)   // hotel per person
-      + (item.extras>0 ? (item.extras/persons) : 0); // extras per person
-  // For auto: breakdown
-  const autoTransportPerPerson = (item.transport==="auto") ? (transportCost/persons) : 0;
-  const hotelPerPerson = item.hotel>0 ? (item.hotel/persons) : 0;
+
+
 
   // Times block
   let timesRows="";
