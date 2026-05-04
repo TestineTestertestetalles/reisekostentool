@@ -300,6 +300,18 @@ input.req-field:focus{
 .transport-tile .pt-check{position:absolute;top:5px;right:5px;font-size:11px;
   opacity:0;transition:opacity 0.15s;}
 .transport-tile.active .pt-check{opacity:1;}
+/* ── Omio info card ── */
+.omio-info-card{background:rgba(96,165,250,0.05);border:1.5px solid rgba(96,165,250,0.2);border-radius:var(--rs);padding:14px 16px;margin-bottom:12px;}
+.omio-info-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;width:100%;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:0;}
+.omio-info-toggle .chevron{color:var(--muted);font-size:11px;transition:transform 0.2s;}
+.omio-info-toggle.open .chevron{transform:rotate(180deg);}
+.omio-info-body{display:none;margin-top:12px;}
+.omio-info-body.open{display:block;}
+.omio-info-section{margin-bottom:12px;}
+.omio-info-section:last-child{margin-bottom:0;}
+.omio-info-section h4{font-size:12px;font-weight:700;color:var(--blue);margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.06em;}
+.omio-info-section p{font-size:12px;color:var(--muted);line-height:1.6;margin:0;}
+.omio-info-section strong{color:var(--text);}
 </style>
 </head>
 <body>
@@ -444,6 +456,32 @@ input.req-field:focus{
   <a class="btn-omio" href="https://www.omio.at" target="_blank" rel="noopener noreferrer">👉 Bei Omio suchen ↗</a>
 
   <!-- Omio Anleitung -->
+  <!-- Omio Info Card -->
+  <div class="omio-info-card">
+    <button class="omio-info-toggle" id="omio-info-toggle" onclick="toggleOmioInfo()">
+      <span>💡 Was ist Omio und wie nutze ich es?</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="omio-info-body" id="omio-info-body">
+      <div class="omio-info-section">
+        <h4>🔍 Was ist Omio?</h4>
+        <p>Omio ist eine <strong>kostenlose Reisesuchmaschine</strong>, die Verbindungen per Bahn, Flug und Bus vergleicht — ähnlich wie Google Flights, aber auch für Bahnreisen. Einfach Start, Ziel und Datum eingeben.</p>
+      </div>
+      <div class="omio-info-section">
+        <h4>🎯 Warum nutzen wir Omio?</h4>
+        <p>Omio zeigt <strong>aktuelle Preise und genaue Fahrzeiten</strong> für alle Verbindungen. Mit dem Teilen-Button lassen sich alle Informationen als Text kopieren — und das Tool trägt sie automatisch ein, ohne dass Sie alles von Hand tippen müssen.</p>
+      </div>
+      <div class="omio-info-section">
+        <h4>📋 Wo finde ich den Kopieren-Button?</h4>
+        <p>Nachdem Sie Hin- und Rückverbindung gewählt haben, erscheint rechts die Reisezusammenfassung. Dort finden Sie den Abschnitt <strong>„Reist du mit jemandem zusammen?"</strong> — daneben ist ein Symbol mit <strong>zwei übereinanderliegenden Blättern</strong> (Kopieren-Symbol). Einen Klick darauf, und der Text ist in der Zwischenablage.</p>
+      </div>
+      <div class="omio-info-section">
+        <h4>⚡ Kurzanleitung</h4>
+        <p><strong>1.</strong> omio.at öffnen &nbsp;→&nbsp; <strong>2.</strong> Start, Ziel &amp; Datum eingeben &nbsp;→&nbsp; <strong>3.</strong> „Zug" oder „Flug" wählen &nbsp;→&nbsp; <strong>4.</strong> Hin- und Rückverbindung auswählen &nbsp;→&nbsp; <strong>5.</strong> Kopier-Symbol klicken &nbsp;→&nbsp; <strong>6.</strong> Text unten einfügen</p>
+      </div>
+    </div>
+  </div>
+
   <button class="guide-toggle" id="guide-toggle-btn" onclick="toggleGuide()">
     <span>📖 Wie kopiere ich die Verbindung aus Omio?</span>
     <span class="chevron">▼</span>
@@ -1631,14 +1669,14 @@ function renderCard(item,isBest,allItems){
     </div>
     <div class="rnums">
       <div>
-        <div class="rnl">${showTotal?"Fahrtkosten gesamt":"Fahrtkosten"+(persons>1?" /Person":"")}</div>
+        <div class="rnl">${showTotal?"Fahrtkosten gesamt":item.transport==="auto"&&persons>1?"Fahrtkosten (geteilt)":"Fahrtkosten"+(persons>1?" /Person":"")}</div>
         <div class="rnv">${showTotal?eurR(transportCost):eurR(transportCost/persons)}</div>
         <div class="rns">${item.costDetail}</div>
       </div>
       ${persons>1?`<div>
-        <div class="rnl">${showTotal?"davon pro Person":"Gesamt"}</div>
+        <div class="rnl">${showTotal?"davon pro Person":item.transport==="auto"?"Gesamtfahrtkosten":"Gesamt"}</div>
         <div class="rnv" style="color:var(--blue)">${showTotal?eurR(transportCost/persons):eurR(transportCost)}</div>
-        <div class="rns">${item.transport==="auto"&&item.numCars>1?item.numCars+" Autos":persons+" Personen"}</div>
+        <div class="rns">${item.transport==="auto"?item.numCars>1?item.numCars+" Autos, "+persons+" Personen":persons+" Personen, 1 Auto":persons+" Personen"}</div>
       </div>`:""}
 
       ${item.hotel>0?`<div>
@@ -1646,7 +1684,11 @@ function renderCard(item,isBest,allItems){
         <div class="rnv" style="color:var(--orange)">+${showTotal?eurR(item.hotel):eurR(hotelPerPersonDisplay)}</div>
         <div class="rns">${item.nights} Nacht${item.nights>1?"e":""}${persons>1&&showTotal?" · je "+eurR(hotelPerPersonDisplay)+"/Pers.":""}</div>
       </div>`:""}
-      ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
+      ${item.extras>0?`<div>
+        <div class="rnl">Extras${showTotal?"":" /Person"}</div>
+        <div class="rnv" style="color:var(--gold)">+${showTotal?eur(item.extras):eur(item.extras/persons)}</div>
+        <div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div>
+      </div>`:""}
       ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars}</div><div class="rns">Autos (max. 5 Pers./Auto)</div></div>`:""}
     </div>
     ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}</div>`:""}
@@ -1974,6 +2016,12 @@ mirrorTransfer('auto-tr-hs','auto-tr-re');
 mirrorTransfer('auto-tr-he','auto-tr-rs');
 
 // ── Omio Guide ────────────────────────────────────────────────────────────────
+function toggleOmioInfo(){
+  var btn=document.getElementById('omio-info-toggle');
+  var body=document.getElementById('omio-info-body');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
 function toggleGuide(){
   var btn=document.getElementById('guide-toggle-btn');
   var box=document.getElementById('guide-box');
