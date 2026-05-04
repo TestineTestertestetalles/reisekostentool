@@ -309,7 +309,7 @@ input.req-field:focus{
 <div class="hdr">
   <div class="badge"><span class="pulse"></span> 100 % KOSTENLOS &middot; KEINE REGISTRIERUNG</div>
   <h1>Reisekostentool</h1>
-  <p style="font-size:18px;font-weight:600;color:var(--text);margin-top:6px;margin-bottom:4px">In 10 Minuten zum Ergebnis.</p>
+  <p style="font-size:18px;font-weight:600;color:var(--text);margin-top:6px;margin-bottom:4px">In weniger als 10 Minuten zum Ergebnis.</p>
   <p class="sub">Dienstreise clever planen.</p>
 </div>
 
@@ -862,7 +862,7 @@ input.req-field:focus{
 
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────────
-const ROAD_FAC=1.30,CAR_SPEED=110,SEAT=5.50,BAG=20;
+const ROAD_FAC=1.30,CAR_SPEED=110,SEAT=5.50,BAG=20,WORK_EFFICIENCY=0.75;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const state={
@@ -1270,7 +1270,8 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     err.classList.add("show");return;
   }
   const nights=calcNights(state.hD,state.rD);
-  const hotelTotal=nights*state.hotelPrice;
+  const hotelPerPerson=nights*state.hotelPrice;
+  const hotelTotal=hotelPerPerson*state.persons;
   const p=state.priority;
 
   function score(cost,timeMin){
@@ -1289,9 +1290,10 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const wH=parseInt(gs("auto-work-hin"))||0,wR=parseInt(gs("auto-work-rueck"))||0;
     const hinDep=fm?addM(state.hT,-fm):"";
     const rueckArr=fm?addM(state.rT,fm):"";
-    // Persons: max 5 per car, ceil(persons/5) cars needed
+    // Auto: user enters TOTAL cost for all cars combined
+    // numCars shown for info only (not used in cost calc)
     const numCars=Math.ceil(state.persons/5);
-    const autoKTotal=autoK*numCars;
+    const autoKTotal=autoK; // user already entered total for all autos
     const total=autoKTotal+hotelTotal;
     const autoPersonLabel=state.persons>1
       ?(numCars>1
@@ -1301,7 +1303,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"auto",icon:"🚗",label:"Auto",total,hotel:hotelTotal,nights,extras:0,
       transport:"auto",persons:state.persons,numCars,
-      dH,dR,wH,wR,score:score(total,dH+dR),
+      dH,dR,wH,wR,score:score(total,Math.max(0,dH+dR-(wH+wR)*WORK_EFFICIENCY)),
       badge:nights>0?"Mit Übernachtung":"Gleichtag",badgeCls:nights>0?"rbo":"rbg",
       costDetail:eur(autoKTotal)+" Fahrt"+autoPersonLabel+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
       detail:"Autokosten: "+eur(autoK)+" je Auto × "+numCars+(numCars>1?" Autos":" Auto")+" = "+eur(autoKTotal)+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
@@ -1333,7 +1335,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"bahn",icon:"🚆",label:"Deutsche Bahn",total,hotel:hotelTotal,nights,extras,
       transport:"bahn",persons:state.persons,
-      dH,dR,wH,wR,score:score(total,dH+dR),
+      dH,dR,wH,wR,score:score(total,Math.max(0,dH+dR-(wH+wR)*WORK_EFFICIENCY)),
       badge:"Sparpreis",badgeCls:"rbg",
       costDetail:eur(transport)+bahnPersonLabel+(extras?" + "+eur(extras)+" Extras":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
       detail:"Hin: "+eur(bhPperPerson)+" · Rück: "+eur(brPperPerson)+" (je Person)"+(state.persons>1?" × "+state.persons+" Personen = "+eur(transport):"")+(extras?". Sitzplatz: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
@@ -1367,7 +1369,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"flug",icon:"✈️",label:"Flug + Transfer",total,hotel:hotelTotal,nights,extras,
       transport:"flug",persons:state.persons,pricePerPerson:fhPperPerson+frPperPerson,
-      dH,dR,wH,wR,score:score(total,dH+dR),
+      dH,dR,wH,wR,score:score(total,Math.max(0,dH+dR-(wH+wR)*WORK_EFFICIENCY)),
       badge:"Flug",badgeCls:"rbm",
       costDetail:eur(transport)+flugPersonLabel+(extras?" + "+eur(extras)+" Gepäck":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
       detail:"Hin: "+eur(fhPperPerson)+" · Rück: "+eur(frPperPerson)+" (je Person)"+(state.persons>1?" × "+state.persons+" Personen = "+eur(transport):"")+(extras?". Gepäck: "+eur(extras):"")+"."+(hotelTotal>0?" "+nights+" Übernachtung"+(nights>1?"en":"")+" × "+eur(state.hotelPrice)+" = "+eurR(hotelTotal)+".":""),
@@ -1405,8 +1407,10 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"kombi-bahn-flug",icon:"🚆✈️",label:"Bahn hin · Flug zurück",
       total,hotel:hotelTotal,nights,extras:seatH+bagR,
-      dH:dmH+trHS+trHE+15,dR:dmR+trRS+trRE+FLUG_PUFFER,wH:0,wR:0, // bahn +15, flug +90
-      score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
+      dH:dmH+trHS+trHE+15,dR:dmR+trRS+trRE+FLUG_PUFFER,
+      wH:parseInt(gs("bahn-hin-work"))||0,
+      wR:(parseInt(gs("flug-rueck-work"))||0)+(parseInt(gs("flug-rueck-gate-work"))||0),
+      score:score(total,Math.max(0,(dmH+trHS+trHE+15+dmR+trRS+trRE+FLUG_PUFFER)-((parseInt(gs("bahn-hin-work"))||0)+(parseInt(gs("flug-rueck-work"))||0)+(parseInt(gs("flug-rueck-gate-work"))||0)))),
       badge:"Kombination",badgeCls:"rbm",
       costDetail:eur(bahnHinP)+" Bahn + "+eur(flugRueckP)+" Flug"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
       detail:"Hinreise: Bahn ("+eur(bahnHinP)+") · Rückreise: Flug ("+eur(flugRueckP)+")",
@@ -1431,8 +1435,10 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     items.push({
       id:"kombi-flug-bahn",icon:"✈️🚆",label:"Flug hin · Bahn zurück",
       total,hotel:hotelTotal,nights,extras:bagH+seatR,
-      dH:dmH+trHS+trHE+FLUG_PUFFER,dR:dmR+trRS+trRE+15,wH:0,wR:0, // flug +90, bahn +15
-      score:score(total,(dmH+trHS+trHE)+(dmR+trRS+trRE)),
+      dH:dmH+trHS+trHE+FLUG_PUFFER,dR:dmR+trRS+trRE+15,
+      wH:(parseInt(gs("flug-hin-work"))||0)+(parseInt(gs("flug-hin-gate-work"))||0),
+      wR:parseInt(gs("bahn-rueck-work"))||0,
+      score:score(total,Math.max(0,(dmH+trHS+trHE+FLUG_PUFFER+dmR+trRS+trRE+15)-((parseInt(gs("flug-hin-work"))||0)+(parseInt(gs("flug-hin-gate-work"))||0)+(parseInt(gs("bahn-rueck-work"))||0)))),
       badge:"Kombination",badgeCls:"rbm",
       costDetail:eur(flugHinP)+" Flug + "+eur(bahnRueckP)+" Bahn"+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
       detail:"Hinreise: Flug ("+eur(flugHinP)+") · Rückreise: Bahn ("+eur(bahnRueckP)+")",
@@ -1538,13 +1544,16 @@ function renderCard(item,isBest,allItems){
   // Per-person cost calculation
   const persons = item.persons || 1;
   const transportCost = item.total - (item.hotel||0) - (item.extras||0);
+  // Hotel: each person pays FULL price (own room) — item.hotel = group total
+  const hotelPerPersonDisplay = item.hotel>0 ? (item.hotel/persons) : 0;
+  const hotelPerPerson = hotelPerPersonDisplay; // alias for rnums template
+
   const costPerPerson = (item.transport === "auto")
-    ? (item.total / persons)
-    : (item.pricePerPerson||0)
-      + (item.hotel>0 ? (item.hotel/persons) : 0)
-      + (item.extras>0 ? (item.extras/persons) : 0);
+    ? (transportCost/persons) + hotelPerPersonDisplay   // shared car + own hotel
+    : (item.pricePerPerson||0)                          // ticket already per person
+      + hotelPerPersonDisplay                           // hotel: each pays full
+      + (item.extras>0 ? (item.extras/persons) : 0);   // extras shared
   const autoTransportPerPerson = (item.transport==="auto") ? (transportCost/persons) : 0;
-  const hotelPerPerson = item.hotel>0 ? (item.hotel/persons) : 0;
 
   // Cost view toggle (depends on costPerPerson, must come after)
   
@@ -1614,10 +1623,10 @@ function renderCard(item,isBest,allItems){
         ${persons>1?`<span class="persons-badge">👥 ${persons} Personen</span>`:""}
       </div>
       <div class="rcard-total ${isBest?"gold":"normal"}" style="font-size:14px;text-align:right">
-        <div class="cost-per-person-lbl">${showTotal?"Gesamt":"pro Person"}</div>
+        <div class="cost-per-person-lbl">${showTotal?"Gesamt ("+persons+" Pers.)":"pro Person"}</div>
         <div class="cost-per-person ${isBest?"gold":""}">${eurR(displayCost)}</div>
         ${persons>1&&!showTotal?`<div class="cost-total-small">Gesamt: ${eurR(item.total)}</div>`:""}
-        ${persons>1&&showTotal?`<div class="cost-total-small">${eurR(costPerPerson)}/Person</div>`:""}
+        ${persons>1&&showTotal?`<div class="cost-total-small">Ø ${eurR(costPerPerson)}/Person</div>`:""}
       </div>
     </div>
     <div class="rnums">
@@ -1633,9 +1642,9 @@ function renderCard(item,isBest,allItems){
       </div>`:""}
 
       ${item.hotel>0?`<div>
-        <div class="rnl">${showTotal?"Hotel gesamt":"Hotel"+(persons>1?" /Person":"")}</div>
-        <div class="rnv" style="color:var(--orange)">+${showTotal?eurR(item.hotel):eurR(hotelPerPerson)}</div>
-        <div class="rns">${item.nights} Nacht${item.nights>1?"e":""}${persons>1?" · "+(showTotal?eurR(hotelPerPerson)+"/Pers.":eurR(item.hotel)+" gesamt"):""}</div>
+        <div class="rnl">${showTotal?"Hotel gesamt":"Hotel /Person"}</div>
+        <div class="rnv" style="color:var(--orange)">+${showTotal?eurR(item.hotel):eurR(hotelPerPersonDisplay)}</div>
+        <div class="rns">${item.nights} Nacht${item.nights>1?"e":""}${persons>1&&showTotal?" · je "+eurR(hotelPerPersonDisplay)+"/Pers.":""}</div>
       </div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
       ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars}</div><div class="rns">Autos (max. 5 Pers./Auto)</div></div>`:""}
@@ -1772,9 +1781,11 @@ document.getElementById('btn-s-overview').addEventListener('click',function(){
   }
   _lastItems.forEach(function(item){
     var cost=item.total, timeMin=(item.dH||0)+(item.dR||0), p=state.priority;
-    item.score = p==='cost'? cost/10+timeMin/120
-               : p==='time'? cost/40+timeMin/30
-               : cost/20+timeMin/60;
+    // Effective time = total time minus productive work time
+    var effTime = Math.max(0, timeMin - ((item.wH||0)+(item.wR||0))*WORK_EFFICIENCY);
+    item.score = p==='cost'? cost/10+effTime/120
+               : p==='time'? cost/40+effTime/30
+               : cost/20+effTime/60;
   });
   _lastItems.sort(function(a,b){ return a.score-b.score; });
   document.querySelectorAll('[data-prio-r]').forEach(function(x){
@@ -2175,10 +2186,12 @@ document.querySelectorAll('[data-prio-r]').forEach(function(t){
     document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
     if(_lastItems.length > 0){
       function scoreItem(item){
-        var p=state.priority, cost=item.total, timeMin=(item.dH||0)+(item.dR||0);
-        if(p==='cost') return cost/10+timeMin/120;
-        if(p==='time') return cost/40+timeMin/30;
-        return cost/20+timeMin/60;
+        var p=state.priority, cost=item.total;
+        var timeMin=(item.dH||0)+(item.dR||0);
+        var effTime=Math.max(0, timeMin - ((item.wH||0)+(item.wR||0))*WORK_EFFICIENCY);
+        if(p==='cost') return cost/10+effTime/120;
+        if(p==='time') return cost/40+effTime/30;
+        return cost/20+effTime/60;
       }
       _lastItems.forEach(function(item){ item.score=scoreItem(item); });
       _lastItems.sort(function(a,b){ return a.score-b.score; });
