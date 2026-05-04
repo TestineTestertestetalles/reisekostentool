@@ -276,6 +276,14 @@ input.req-field:focus{
 .guide-step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
 .guide-step-desc{font-size:11px;color:var(--muted);line-height:1.5;}
 .guide-tip{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:9px 11px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px;font-size:11px;color:#c8a84b;line-height:1.5;}
+/* ── Cost view toggle ── */
+.cost-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.cost-view-tile{padding:10px;border-radius:8px;text-align:center;cursor:pointer;transition:all 0.15s;border:1.5px solid var(--br);background:var(--s1);}
+.cost-view-tile.active{border-color:rgba(96,165,250,0.5);background:rgba(96,165,250,0.08);}
+.cost-view-tile .prio-tile-icon{font-size:18px;margin-bottom:3px;}
+.cost-view-tile .prio-tile-label{font-size:13px;font-weight:700;color:var(--text);}
+.cost-view-tile.active .prio-tile-label{color:var(--blue);}
+.cost-view-tile .prio-tile-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 </style>
 </head>
 <body>
@@ -776,6 +784,21 @@ input.req-field:focus{
       <div class="prio-tile" data-prio-r="time"><div class="prio-tile-icon">⚡</div><div class="prio-tile-label">Schnellste</div><div class="prio-tile-sub">Zeit zählt</div></div>
     </div>
   </div>
+  <div class="card no-print" id="cost-view-card" style="display:none;margin-bottom:14px;padding:16px 18px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">💰 Kostenansicht</div>
+    <div class="cost-view-grid">
+      <div class="cost-view-tile active" id="cv-perperson" onclick="setCostView('perperson')">
+        <div class="prio-tile-icon">👤</div>
+        <div class="prio-tile-label">Je Person</div>
+        <div class="prio-tile-sub">Kosten pro Kopf</div>
+      </div>
+      <div class="cost-view-tile" id="cv-total" onclick="setCostView('total')">
+        <div class="prio-tile-icon">👥</div>
+        <div class="prio-tile-label">Alle Reisenden</div>
+        <div class="prio-tile-sub">Gesamtkosten</div>
+      </div>
+    </div>
+  </div>
   <div class="rpill no-print" id="rpill-results"></div>
   <div class="recom no-print" id="recom-box">
     <span style="font-size:20px">💡</span>
@@ -804,6 +827,7 @@ const state={
   startText:"",zielText:"",startGeo:null,zielGeo:null,
   hD:"",hT:"10:00",rD:"",rT:"17:00",
   persons:1,hasLicence:false,priority:"balanced",canWorkDuringTravel:false,
+  costView:'perperson',
   hotelPrice:100
 };
 
@@ -1410,6 +1434,14 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
 function renderResults(items){
   const best=items[0];
   const pLabel={cost:"Kosten",time:"Reisezeit",balanced:"Kosten & Zeit"}[state.priority];
+  var cvCard=document.getElementById('cost-view-card');
+  if(cvCard){
+    var hasMulti=items.some(function(it){return (it.persons||1)>1;});
+    cvCard.style.display=hasMulti?'block':'none';
+    if(!hasMulti) state.costView='perperson';
+    document.getElementById('cv-perperson').classList.toggle('active',state.costView==='perperson');
+    document.getElementById('cv-total').classList.toggle('active',state.costView==='total');
+  }
 
   // Recommendation
   const recMap={
@@ -1469,10 +1501,15 @@ function renderCard(item,isBest,allItems){
   const costWord = costDiff<=-10?"deutlich günstiger":costDiff<=-2?"günstiger":costDiff<=2?"durchschnittlich":costDiff<=10?"teurer":"deutlich teurer";
   const timeWord = timeDiff<=-10?"deutlich schneller":timeDiff<=-2?"schneller":timeDiff<=2?"durchschnittlich":timeDiff<=10?"langsamer":"deutlich langsamer";
   const prioName = state.priority==="cost"?"Kosten-Effizienz":state.priority==="time"?"Zeit-Effizienz":"Gesamt-Effizienz";
-  const scoreExpl = "Kosten: "+eurR(costPerPerson)+"/Pers. ("+Math.abs(costDiff)+"% "+(costDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(avgCost))+" gesamt)"
+  const scoreExpl = "Kosten: "+eurR(displayCost)+(showTotal?" gesamt":" /Pers.")+" ("+Math.abs(displayDiff)+"% "+(displayDiff<=0?"günstiger als":"teurer als")+" Ø"+eurR(Math.round(displayAvgCost))+(showTotal?" gesamt":" /Pers.")+")"
     +" · Reisezeit: "+durS(totalMin)+" ("+Math.abs(timeDiff)+"% "+(timeDiff<=0?"schneller als":"langsamer als")+" Ø"+durS(Math.round(avgTime))+")"
     +" · Effizienz-Score: "+bw+"% ("+prioName+")";
   const cardId = "score-info-"+item.id.replace(/[^a-z0-9]/g,"");
+  var showTotal = (state.costView === "total");
+  var displayCost = showTotal ? item.total : costPerPerson;
+  var displayAvgCost = showTotal ? allItems.reduce(function(s,x){return s+x.total;},0)/allItems.length
+    : allItems.reduce(function(s,x){return s+(x.total/(x.persons||1));},0)/allItems.length;
+  var displayDiff = Math.round((displayCost - displayAvgCost) / displayAvgCost * 100);
 
   // Per-person cost calculation
   const persons = item.persons || 1;
@@ -1542,31 +1579,33 @@ function renderCard(item,isBest,allItems){
         ${persons>1?`<span class="persons-badge">👥 ${persons} Personen</span>`:""}
       </div>
       <div class="rcard-total ${isBest?"gold":"normal"}" style="font-size:14px;text-align:right">
-        <div class="cost-per-person-lbl">pro Person</div>
-        <div class="cost-per-person ${isBest?"gold":""}">${eurR(costPerPerson)}</div>
-        ${persons>1?`<div class="cost-total-small">Gesamt: ${eurR(item.total)}</div>`:""}
+        <div class="cost-per-person-lbl">${showTotal?"Gesamt":"pro Person"}</div>
+        <div class="cost-per-person ${isBest?"gold":""}">${eurR(displayCost)}</div>
+        ${persons>1&&!showTotal?`<div class="cost-total-small">Gesamt: ${eurR(item.total)}</div>`:""}
+        ${persons>1&&showTotal?`<div class="cost-total-small">${eurR(costPerPerson)}/Person</div>`:""}
       </div>
     </div>
     <div class="rnums">
       <div>
-        <div class="rnl">Fahrtkosten${persons>1?" gesamt":""}</div>
-        <div class="rnv">${eurR(transportCost)}</div>
+        <div class="rnl">${showTotal?"Fahrtkosten gesamt":"Fahrtkosten"+(persons>1?" /Person":"")}</div>
+        <div class="rnv">${showTotal?eurR(transportCost):eurR(transportCost/persons)}</div>
         <div class="rns">${item.costDetail}</div>
       </div>
       ${persons>1?`<div>
-        <div class="rnl">Fahrtkosten/Person</div>
-        <div class="rnv" style="color:var(--blue)">${eurR(transportCost/persons)}</div>
-        <div class="rns">${item.transport==="auto"&&item.numCars>1?item.numCars+" Autos ÷ "+persons+" Pers.":persons+" Personen"}</div>
+        <div class="rnl">${showTotal?"davon pro Person":"Gesamt"}</div>
+        <div class="rnv" style="color:var(--blue)">${showTotal?eurR(transportCost/persons):eurR(transportCost)}</div>
+        <div class="rns">${item.transport==="auto"&&item.numCars>1?item.numCars+" Autos":persons+" Personen"}</div>
       </div>`:""}
+
       ${item.hotel>0?`<div>
-        <div class="rnl">Hotel${persons>1?" gesamt":""}</div>
-        <div class="rnv" style="color:var(--orange)">+${eurR(item.hotel)}</div>
-        <div class="rns">${item.nights} Nacht${item.nights>1?"¨e":""}${persons>1?" · "+eurR(hotelPerPerson)+"/Pers.":""}</div>
+        <div class="rnl">${showTotal?"Hotel gesamt":"Hotel"+(persons>1?" /Person":"")}</div>
+        <div class="rnv" style="color:var(--orange)">+${showTotal?eurR(item.hotel):eurR(hotelPerPerson)}</div>
+        <div class="rns">${item.nights} Nacht${item.nights>1?"e":""}${persons>1?" · "+(showTotal?eurR(hotelPerPerson)+"/Pers.":eurR(item.hotel)+" gesamt"):""}</div>
       </div>`:""}
       ${item.extras>0?`<div><div class="rnl">Extras</div><div class="rnv" style="color:var(--gold)">+${eur(item.extras)}</div><div class="rns">${[item.seatHin&&"🎫 Sitz Hin",item.seatRueck&&"🎫 Sitz Rück",item.bagHin&&"🧳 Gepäck Hin",item.bagRueck&&"🧳 Gepäck Rück"].filter(Boolean).join(" · ")}</div></div>`:""}
       ${item.numCars>1?`<div><div class="rnl">Fahrzeuge</div><div class="rnv" style="font-size:15px">${item.numCars}</div><div class="rns">Autos (max. 5 Pers./Auto)</div></div>`:""}
     </div>
-    ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}}</div>`:""}
+    ${totalMin>0?`<div class="total-time-row"><span style="font-size:16px">⏱</span><div><div class="total-time-lbl">Gesamtreisezeit (Hin + Rück)</div><div class="total-time-val">${durS(totalMin)}</div></div>${item.dH>0?`<div class="total-time-aside">↗ Hin: ${durS(item.dH)}<br>${item.dR>0?"↙ Rück: "+durS(item.dR):""}</div>`:""}</div>`:""}
     ${hasAnyTime?`<div class="times-block">${timesRows}</div>`:""}
     ${wTotal>0?`<div class="work-row"><span style="font-size:14px">💼</span><span style="font-size:12px;color:var(--muted)">Produktive Reisezeit gesamt:</span><span class="work-val">${durS(wTotal)}</span>${item.wH>0&&item.wR>0?`<span style="font-size:11px;color:var(--muted);margin-left:6px">(Hin: ${durS(item.wH)} / Rück: ${durS(item.wR)})</span>`:""}</div>`:""}
     <div class="sbar">
@@ -1586,39 +1625,73 @@ function renderCard(item,isBest,allItems){
   </div>`;
 }
 
+function renderResults(items){
+  const best=items[0];
+  const pLabel={cost:"Kosten",time:"Reisezeit",balanced:"Kosten & Zeit"}[state.priority];
+  var cvCard=document.getElementById('cost-view-card');
+  if(cvCard){
+    var hasMulti=items.some(function(it){return (it.persons||1)>1;});
+    cvCard.style.display=hasMulti?'block':'none';
+    if(!hasMulti) state.costView='perperson';
+    document.getElementById('cv-perperson').classList.toggle('active',state.costView==='perperson');
+    document.getElementById('cv-total').classList.toggle('active',state.costView==='total');
+  }
+
+  // Recommendation
+  const recMap={
+    auto:"Auto – günstigste Option ("+eurR(best.total)+" gesamt), kein Umsteigen.",
+    bahn:"Deutsche Bahn – bestes Preis-Zeit-Verhältnis ("+eurR(best.total)+" gesamt).",
+    flug:"Flug – effizienteste Option ("+eurR(best.total)+" gesamt).",
+    "kombi-bahn-flug":"Kombination Bahn hin / Flug zurück – bestes Gesamtergebnis ("+eurR(best.total)+").",
+    "kombi-flug-bahn":"Kombination Flug hin / Bahn zurück – bestes Gesamtergebnis ("+eurR(best.total)+")."
+  };
+  const nights=calcNights(state.hD,state.rD);
+  document.getElementById("recom-text").innerHTML=
+    "<strong>Empfehlung ("+pLabel+"):</strong> "+(recMap[best.id]||"")
+    +(nights>0?" Inkl. "+nights+" Übernachtung"+(nights>1?"en":"")+" ("+eurR(nights*state.hotelPrice)+").":"");
+
+  const container=document.getElementById("results-container");
+  container.innerHTML=items.map((item,i)=>renderCard(item,i===0,items)).join("");
+
+  // Print header
+  const now=new Date();
+  const ts=now.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})
+    +" um "+now.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";
+  document.getElementById("print-header").innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+    +'<div><div style="font-size:18pt;font-weight:700;color:#111">Reisekostenvergleich</div>'
+    +'<div style="font-size:11pt;color:#555;margin-top:3px">'+state.startText+' ↔ '+state.zielText+'</div></div>'
+    +'<div style="text-align:right;font-size:10pt;color:#555">'
+    +'<div>Hinreise: '+fDT(state.hD,state.hT)+'</div>'
+    +'<div>Rückreise: '+fDT(state.rD,state.rT)+'</div>'
+    +(nights>0?'<div>'+nights+' Übernachtung'+(nights>1?"en":"")+" à "+eur(state.hotelPrice)+'</div>':"")
+    +'</div></div>';
+
+  document.getElementById("print-footer").innerHTML=
+    '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+    +'<span>Optimierungsziel: '+pLabel+' · Preise aus Omio · Auto: individuell · Hotel: '
+    +eur(state.hotelPrice)+'/Nacht · OpenStreetMap</span>'
+    +'<span style="font-weight:600">Erstellt: '+ts+'</span></div>';
+
+  document.getElementById("results-footnote").textContent=
+    "Optimierungsziel: "+pLabel+" · Preise aus Omio · Auto: individuell · Hotel: "+eur(state.hotelPrice)+"/Nacht";
+}
+
 // ── New search ────────────────────────────────────────────────────────────────
 document.getElementById("btn-new-search").addEventListener("click",()=>{
-  // Reset all inputs
-  // Clear mirror override flags so mirroring works again after reset
-  ['bahn-rueck-te','bahn-rueck-ts','flug-rueck-te','flug-rueck-ts','auto-tr-re','auto-tr-rs'].forEach(function(id){
-    var el=document.getElementById(id); if(el) delete el.dataset.userEdited;
-  });
-  ["inp-start","inp-ziel","hD","rD","auto-kosten","flug-hin-gate-work","flug-rueck-gate-work",
+  ["inp-start","inp-ziel","hD","rD","auto-kosten",
    "bahn-hin-dep","bahn-hin-arr","bahn-hin-price","bahn-rueck-dep","bahn-rueck-arr","bahn-rueck-price",
    "flug-hin-dep","flug-hin-arr","flug-hin-price","flug-rueck-dep","flug-rueck-arr","flug-rueck-price",
-   "auto-tr-hs","auto-tr-he","auto-tr-rs","auto-tr-re","bahn-hin-ts","bahn-hin-te","bahn-rueck-ts","bahn-rueck-te",
-   "flug-hin-ts","flug-hin-te","flug-rueck-ts","flug-rueck-te"
+   "auto-tr-hs","auto-tr-he","auto-tr-rs","auto-tr-re",
+   "bahn-hin-ts","bahn-hin-te","bahn-rueck-ts","bahn-rueck-te",
+   "flug-hin-ts","flug-hin-te","flug-rueck-ts","flug-rueck-te",
+   "flug-hin-gate-work","flug-rueck-gate-work"
   ].forEach(id=>{const el=g(id);if(el)el.value="";});
-  g("hT").value="10:00";g("rT").value="17:00";g("hotel-price").value="100";
+  g("hT").value="10:00";g("rT").value="17:00";
   ["seat-hin","seat-rueck","bag-hin","bag-rueck"].forEach(id=>{const el=g(id);if(el)el.checked=false;});
-  ["seat-hin-cb","seat-rueck-cb","bag-hin-cb","bag-rueck-cb"].forEach(id=>{const el=g(id);if(el){el.classList.remove("checked");}});
+  ["seat-hin-cb","seat-rueck-cb","bag-hin-cb","bag-rueck-cb"].forEach(id=>{const el=g(id);if(el)el.classList.remove("checked");});
   ["seat-hin-price","seat-rueck-price","bag-hin-price","bag-rueck-price"].forEach(id=>{const el=g(id);if(el)el.textContent="—";});
-  state.startText="";state.zielText="";state.startGeo=null;state.zielGeo=null;
-  state.hD="";state.hT="10:00";state.rD="";state.rT="17:00";
-  state.persons=1;state.hasLicence=false;state.priority="balanced";state.hotelPrice=100;
-  updatePersonsUI();
-  g("licence-check").checked=false;g("licence-cb").classList.remove("checked");
-  g("licence-note").textContent="Kein gültiger Führerschein → Auto-Option wird ausgeschlossen";
-  // prio-tile reset handled via data-prio-r tiles on results page
-  document.querySelectorAll("[data-work]").forEach(function(t){ t.classList.toggle("active", t.dataset.work==="no"); });
-  var wh = document.getElementById("work-travel-hint"); if(wh) wh.style.display="none";
-  state.canWorkDuringTravel = false;
-  document.querySelectorAll("[data-work]").forEach(t=>t.classList.toggle("active",t.dataset.work==="no"));
-  document.getElementById("work-travel-hint").style.display="none";
-  state.canWorkDuringTravel=false;
-  updateHotelUI();updateAutoKmHint();
-  ["bahn-hin-work-wrap","bahn-rueck-work-wrap","flug-hin-work-wrap","flug-rueck-work-wrap","auto-work-wrap"].forEach(id=>{const el=g(id);if(el)el.style.display="none";});
-  // Reset price total hints and placeholders
+  // Reset price total hints
   ['bahn-hin-price','bahn-rueck-price','flug-hin-price','flug-rueck-price'].forEach(function(id){
     var el=document.getElementById(id);
     if(!el) return;
@@ -1628,360 +1701,67 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
       if(id.includes('bahn')) updateBahnBadge(); else updateFlugBadge();
     });
   });
+  state.startText="";state.zielText="";state.startGeo=null;state.zielGeo=null;
+  state.hD="";state.hT="10:00";state.rD="";state.rT="17:00";
+  state.persons=1;state.hasLicence=false;state.priority="balanced";state.hotelPrice=100;
+  updatePersonsUI();
+  g("licence-check").checked=false;g("licence-cb").classList.remove("checked");
+  g("licence-note").textContent="Kein gültiger Führerschein → Auto-Option wird ausgeschlossen";
+  // prio-tile reset handled via data-prio-r tiles on results page
+  state.costView = 'perperson';
+  var cvp=document.getElementById('cv-perperson'); if(cvp) cvp.classList.add('active');
+  var cvt=document.getElementById('cv-total'); if(cvt) cvt.classList.remove('active');
+  // Clear mirror override flags
+  ['bahn-rueck-te','bahn-rueck-ts','flug-rueck-te','flug-rueck-ts','auto-tr-re','auto-tr-rs'].forEach(function(id){
+    var el=document.getElementById(id); if(el) delete el.dataset.userEdited;
+  });
+  inpStart.value="";inpZiel.value="";
+  document.querySelectorAll("[data-work]").forEach(function(t){ t.classList.toggle("active", t.dataset.work==="no"); });
+  var wh = document.getElementById("work-travel-hint"); if(wh) wh.style.display="none";
+  state.canWorkDuringTravel=false;
+  updateHotelUI();updateAutoKmHint();
+  ["bahn-hin-work-wrap","bahn-rueck-work-wrap","flug-hin-work-wrap","flug-rueck-work-wrap"].forEach(function(id){const el=g(id);if(el)el.style.display="none";});
+  clearInvalid();
+  _lastItems=[];
   showScreen("s-form");
 });
 
-// ── Omio Text Parser ─────────────────────────────────────────────────────────
-function parseOmio(transport, leg) {
-  var pasteId  = transport + '-' + leg + '-paste';
-  var resultId = transport + '-' + leg + '-parse-result';
-  var text     = document.getElementById(pasteId).value.trim();
-  var result   = document.getElementById(resultId);
-  if (!text) { showParseResult(result,'err','Bitte erst Text einfügen.'); return; }
+var _lastItems = []; // stores last calculated items for re-render
 
-  var depId   = transport + '-' + leg + '-dep';
-  var arrId   = transport + '-' + leg + '-arr';
-  var priceId = transport + '-' + leg + '-price';
-  var found   = [];
-  var warnings = [];
-
-  // ── Strategy 1: Structured Omio share-text ───────────────────────────────
-  // "Abreise: Bremen Hbf am 25.5.2026 um 06:44"
-  // "Ankunft: Stuttgart Hbf am 25.5.2026 um 12:11"
-  // "Aktueller Preis für 1 Reisegast: 90 €"
-  var depOmio   = text.match(/Abreise\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/i);
-  var arrOmio   = text.match(/Ankunft\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/i);
-  var priceOmio = text.match(/Preis\s+f[üu]r\s+\d+\s+Reiseg[ae]st[a-z]*\s*:\s*([\d.,]+)\s*€/i);
-
-  if (depOmio || arrOmio || priceOmio) {
-    // Structured format detected
-    if (depOmio) {
-      var depT = padTime(depOmio[2]);
-      document.getElementById(depId).value = depT;
-      document.getElementById(depId).dispatchEvent(new Event('change'));
-      found.push('Abfahrt: ' + depT + ' (' + depOmio[1].trim() + ')');
-    }
-    if (arrOmio) {
-      var arrT = padTime(arrOmio[2]);
-      document.getElementById(arrId).value = arrT;
-      document.getElementById(arrId).dispatchEvent(new Event('change'));
-      found.push('Ankunft: ' + arrT + ' (' + arrOmio[1].trim() + ')');
-    }
-    if (priceOmio) {
-      var price = parseFloat(priceOmio[1].replace(',','.'));
-      // Check if price is per person and persons > 1
-      var personsInText = text.match(/f[üu]r\s+(\d+)\s+Reiseg/i);
-      var paxInText = personsInText ? parseInt(personsInText[1]) : 1;
-      if (paxInText > 1 && state.persons > 1 && paxInText !== state.persons) {
-        warnings.push('Achtung: Preis gilt für ' + paxInText + ' Person(en), eingetragen für ' + state.persons);
-      }
-      document.getElementById(priceId).value = price.toFixed(2);
-      found.push('Preis: ' + price.toFixed(2).replace('.',',') + ' €');
-    }
-    var msg = '✓ ' + found.join(' · ');
-    if (warnings.length) msg += ' — ⚠ ' + warnings.join(' | ');
-    showParseResult(result, 'ok', msg);
+document.getElementById('btn-s-overview').addEventListener('click',function(){
+  if(_lastItems.length === 0){
+    document.getElementById('btn-s3').click();
     return;
   }
-
-  // ── Strategy 2: Fallback – generic time + price extraction ───────────────
-  var timeRx = /(\d{1,2})[:\.](\d{2})/g;
-  var times = [], m;
-  while ((m = timeRx.exec(text)) !== null) {
-    var h = parseInt(m[1]), mn = parseInt(m[2]);
-    if (h <= 23 && mn <= 59) times.push(padTime(h+':'+mn));
-  }
-  var priceRx = /(?:ab\s+|EUR\s*|€\s*)([\d]+(?:[.,]\d{1,2})?)|(\d+(?:[.,]\d{1,2})?)\s*(?:€|EUR)/gi;
-  var prices = [];
-  while ((m = priceRx.exec(text)) !== null) {
-    var raw = (m[1]||m[2]).replace(',','.');
-    var val = parseFloat(raw);
-    if (val > 0 && val < 10000) prices.push(val);
-  }
-  if (times.length >= 1) {
-    document.getElementById(depId).value = times[0];
-    document.getElementById(depId).dispatchEvent(new Event('change'));
-    found.push('Abfahrt: ' + times[0]);
-  }
-  if (times.length >= 2) {
-    var arrTime = times.find(function(t){return t!==times[0];})||times[1];
-    document.getElementById(arrId).value = arrTime;
-    document.getElementById(arrId).dispatchEvent(new Event('change'));
-    found.push('Ankunft: ' + arrTime);
-  }
-  if (prices.length >= 1) {
-    var p = Math.min.apply(null, prices);
-    document.getElementById(priceId).value = p.toFixed(2);
-    found.push('Preis: ' + p.toFixed(2).replace('.',',') + ' €');
-  }
-  if (found.length === 0) {
-    showParseResult(result,'err',
-      'Nicht erkannt. Tipp: Den vollständigen Omio-Teilen-Text einfügen ("Abreise: ... um HH:MM / Ankunft: ... um HH:MM / Preis: X €").');
-  } else {
-    showParseResult(result,'ok','✓ Erkannt (allgemein): ' + found.join(' · '));
-  }
-}
-
-function parseOmioCombined(transport) {
-  var pasteId  = transport + '-combined-paste';
-  var resultId = transport + '-combined-parse-result';
-  var text     = document.getElementById(pasteId).value.trim();
-  var result   = document.getElementById(resultId);
-  if (!text) { showParseResult(result,'err','Bitte erst Text einfügen.'); return; }
-
-  // Extract ALL Abreise and Ankunft entries
-  var depRx = /Abreise\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
-  var arrRx = /Ankunft\s*:\s*(.+?)\s+am\s+[\d.]+\s+um\s+(\d{1,2}:\d{2})/gi;
-  var priceRx = /Preis\s+f[üu]r\s+(\d+)\s+Reiseg[ae]st[a-z]*\s*:\s*([\d.,]+)\s*€/i;
-
-  var deps = [], arrs = [], m;
-  while ((m = depRx.exec(text)) !== null)  deps.push({station:m[1].trim(), time:padTime(m[2])});
-  while ((m = arrRx.exec(text)) !== null)  arrs.push({station:m[1].trim(), time:padTime(m[2])});
-  var priceMatch = text.match(priceRx);
-
-  if (deps.length === 0 && arrs.length === 0) {
-    showParseResult(result,'err','Keine strukturierten Omio-Daten erkannt. Format: "Abreise: ... um HH:MM"');
-    return;
-  }
-
-  var found = [];
-  var isRoundTrip = deps.length >= 2 && arrs.length >= 2;
-
-  // ── Hinreise ──────────────────────────────────────────────────────────────
-  if (deps.length >= 1) {
-    document.getElementById(transport+'-hin-dep').value = deps[0].time;
-    document.getElementById(transport+'-hin-dep').dispatchEvent(new Event('change'));
-    // Store station names in hidden fields
-    var hinDepSt = document.getElementById(transport+'-hin-dep-station');
-    if (hinDepSt) hinDepSt.value = deps[0].station;
-    found.push('↗ Abfahrt: '+deps[0].time+' ('+deps[0].station+')');
-  }
-  if (arrs.length >= 1) {
-    document.getElementById(transport+'-hin-arr').value = arrs[0].time;
-    document.getElementById(transport+'-hin-arr').dispatchEvent(new Event('change'));
-    var hinArrSt = document.getElementById(transport+'-hin-arr-station');
-    if (hinArrSt) hinArrSt.value = arrs[0].station;
-    found.push('Ankunft: '+arrs[0].time+' ('+arrs[0].station+')');
-  }
-
-  // ── Rückreise ─────────────────────────────────────────────────────────────
-  if (isRoundTrip) {
-    document.getElementById(transport+'-rueck-dep').value = deps[1].time;
-    document.getElementById(transport+'-rueck-dep').dispatchEvent(new Event('change'));
-    var rueckDepSt = document.getElementById(transport+'-rueck-dep-station');
-    if (rueckDepSt) rueckDepSt.value = deps[1].station;
-    found.push('↙ Abfahrt: '+deps[1].time+' ('+deps[1].station+')');
-    document.getElementById(transport+'-rueck-arr').value = arrs[1].time;
-    document.getElementById(transport+'-rueck-arr').dispatchEvent(new Event('change'));
-    var rueckArrSt = document.getElementById(transport+'-rueck-arr-station');
-    if (rueckArrSt) rueckArrSt.value = arrs[1].station;
-    found.push('Ankunft: '+arrs[1].time+' ('+arrs[1].station+')');
-  }
-
-  // ── Gesamtpreis anzeigen, Differenz-Logik aktivieren ───────────────────
-  var priceNote = '';
-  if (priceMatch) {
-    var pax   = parseInt(priceMatch[1]);
-    var total = parseFloat(priceMatch[2].replace(',','.'));
-    var totalForGroup = (total / pax) * state.persons;
-    priceNote = '⚠ Gesamtpreis: ' + totalForGroup.toFixed(2).replace('.',',') + ' €';
-    if (state.persons !== pax) {
-      priceNote += ' (umgerechnet für ' + state.persons + ' Person' + (state.persons>1?'en':'') + ')';
-    }
-    priceNote += ' — Hinpreis eintragen → Rückpreis wird automatisch berechnet (und umgekehrt)';
-    // Clear price fields
-    var hinEl   = document.getElementById(transport+'-hin-price');
-    var rueckEl = document.getElementById(transport+'-rueck-price');
-    hinEl.value   = '';
-    rueckEl.value = '';
-    // Store total on elements as data attribute for the mirror logic
-    hinEl.dataset.priceTotal   = totalForGroup.toFixed(2);
-    rueckEl.dataset.priceTotal = totalForGroup.toFixed(2);
-    // Show total as placeholder hint
-    hinEl.placeholder   = 'z.B. ' + (totalForGroup/2).toFixed(0) + ' (Summe: ' + totalForGroup.toFixed(0) + ' €)';
-    rueckEl.placeholder = 'z.B. ' + (totalForGroup/2).toFixed(0) + ' (Summe: ' + totalForGroup.toFixed(0) + ' €)';
-    // Activate price-split mirroring for this transport
-    activatePriceMirror(transport);
-    // Show total in badge immediately (transport costs only, no hotel)
-    var badge = document.getElementById(transport+'-cost-badge');
-    if (badge) {
-      badge.textContent = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(totalForGroup);
-      badge.title = 'Gesamtpreis aus Omio (ohne Hotel)';
-    }
-  }
-
-  var msg = '✓ Zeiten eingetragen: ' + found.join(' · ');
-  if (!isRoundTrip && deps.length === 1) msg += ' — nur Hinreise erkannt';
-  if (priceNote) msg += '\n' + priceNote;
-  showParseResult(result,'ok',msg);
-  // Show price note separately if it exists (longer duration so user sees it)
-  if (priceNote) {
-    setTimeout(function(){
-      var el = document.getElementById(transport+'-combined-parse-result');
-      if(el) { el.style.display='block'; }
-    }, 100);
-  }
-}
-
-function activatePriceMirror(transport) {
-  var hinEl   = document.getElementById(transport+'-hin-price');
-  var rueckEl = document.getElementById(transport+'-rueck-price');
-  if (!hinEl || !rueckEl) return;
-
-  function calcOther(srcEl, dstEl) {
-    var total = parseFloat(srcEl.dataset.priceTotal);
-    if (isNaN(total) || total <= 0) return;
-    var entered = parseFloat(srcEl.value);
-    if (isNaN(entered) || entered < 0) { dstEl.value = ''; return; }
-    var other = total - entered;
-    if (other < 0) other = 0;
-    dstEl.value = other.toFixed(2);
-    // Trigger badge update
-    if (transport === 'bahn') updateBahnBadge();
-    if (transport === 'flug') updateFlugBadge();
-  }
-
-  // Remove old listeners by cloning (clean approach)
-  var newHin   = hinEl.cloneNode(true);
-  var newRueck = rueckEl.cloneNode(true);
-  hinEl.parentNode.replaceChild(newHin, hinEl);
-  rueckEl.parentNode.replaceChild(newRueck, rueckEl);
-
-  // Re-attach existing badge listeners
-  newHin.addEventListener('input',   function(){ calcOther(newHin, newRueck); updateBahnBadge(); updateFlugBadge(); });
-  newRueck.addEventListener('input', function(){ calcOther(newRueck, newHin); updateBahnBadge(); updateFlugBadge(); });
-}
-
-function padTime(t) {
-  var parts = String(t).split(':');
-  var h = parseInt(parts[0]), m = parseInt(parts[1]||0);
-  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
-}
-
-function showParseResult(el, type, msg, duration) {
-  el.className = 'parse-result ' + type;
-  // Support newlines in message
-  el.innerHTML = '';
-  var lines = msg.split('\n');
-  lines.forEach(function(line, i) {
-    if (i > 0) el.appendChild(document.createElement('br'));
-    el.appendChild(document.createTextNode(line));
+  _lastItems.forEach(function(item){
+    var cost=item.total, timeMin=(item.dH||0)+(item.dR||0), p=state.priority;
+    item.score = p==='cost'? cost/10+timeMin/120
+               : p==='time'? cost/40+timeMin/30
+               : cost/20+timeMin/60;
   });
-  el.style.display = 'block';
-  var ms = duration || (msg.length > 80 ? 12000 : 8000);
-  setTimeout(function(){ el.style.display = 'none'; }, ms);
-}
-
-// ── Live cost badges ─────────────────────────────────────────────────────────
-function updateCostBadge(id, val) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  if (!val || isNaN(val) || val <= 0) { el.textContent = '—'; return; }
-  el.textContent = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(val);
-}
-function updateAutoBadge() {
-  var k = parseFloat(document.getElementById('auto-kosten').value) || 0;
-  // Hotel excluded – shown separately on result page
-  updateCostBadge('auto-cost-badge', k);
-}
-function updateBahnBadge() {
-  var hp = parseFloat(document.getElementById('bahn-hin-price').value)   || 0;
-  var rp = parseFloat(document.getElementById('bahn-rueck-price').value) || 0;
-  var sh = document.getElementById('seat-hin').checked   ? 5.50 : 0;
-  var sr = document.getElementById('seat-rueck').checked ? 5.50 : 0;
-  // Hotel excluded – shown separately on result page
-  var total = hp + rp + sh + sr;
-  updateCostBadge('bahn-cost-badge', total > 0 ? total : 0);
-}
-function updateFlugBadge() {
-  var hp = parseFloat(document.getElementById('flug-hin-price').value)   || 0;
-  var rp = parseFloat(document.getElementById('flug-rueck-price').value) || 0;
-  var bh = document.getElementById('bag-hin').checked   ? 20 : 0;
-  var br = document.getElementById('bag-rueck').checked ? 20 : 0;
-  // Hotel excluded – shown separately on result page
-  var total = hp + rp + bh + br;
-  updateCostBadge('flug-cost-badge', total > 0 ? total : 0);
-}
-// Hook cost badge updates to relevant inputs
-['auto-kosten','hotel-price'].forEach(function(id){
-  var el=document.getElementById(id); if(el) el.addEventListener('input', updateAutoBadge);
-});
-['bahn-hin-price','bahn-rueck-price'].forEach(function(id){
-  var el=document.getElementById(id); if(el) el.addEventListener('input', updateBahnBadge);
-});
-['flug-hin-price','flug-rueck-price'].forEach(function(id){
-  var el=document.getElementById(id); if(el) el.addEventListener('input', updateFlugBadge);
-});
-['seat-hin-cb','seat-rueck-cb'].forEach(function(id){
-  var el=document.getElementById(id); if(el) el.addEventListener('click', function(){ setTimeout(updateBahnBadge, 50); });
-});
-['bag-hin-cb','bag-rueck-cb'].forEach(function(id){
-  var el=document.getElementById(id); if(el) el.addEventListener('click', function(){ setTimeout(updateFlugBadge, 50); });
+  _lastItems.sort(function(a,b){ return a.score-b.score; });
+  document.querySelectorAll('[data-prio-r]').forEach(function(x){
+    x.classList.toggle('active', x.dataset.prioR===state.priority);
+  });
+  renderResults(_lastItems);
+  showScreen('s-results');
 });
 
-// ── Transfer time mirroring ───────────────────────────────────────────────────
-// Rule A: hin-ts (Weg von Zuhause) ↔ rueck-te (Weg nach Hause) — symmetric
-// Rule B: hin-te (Weg zum Ziel)    ↔ rueck-ts (Weg vom Ziel)    — symmetric
-// Each mirrored field stays editable (user can override)
-function mirrorTransfer(changedId, mirrorId) {
-  var src = document.getElementById(changedId);
-  var dst = document.getElementById(mirrorId);
-  if (!src || !dst) return;
-  src.addEventListener('input', function() {
-    // Only mirror if target is empty OR equals previous value of source
-    // (i.e. user hasn't manually changed target yet)
-    if (dst.dataset.userEdited !== '1') {
-      dst.value = src.value;
-    }
-  });
-  // Mark field as manually edited when user directly types in it
-  dst.addEventListener('input', function() {
-    dst.dataset.userEdited = '1';
-  });
-  // When source changes and target was mirrored, keep in sync unless user edited
-  src.addEventListener('change', function() {
-    if (dst.dataset.userEdited !== '1') {
-      dst.value = src.value;
-    }
-  });
-}
-
-// Bahn: Rule A — Zuhause→Bahnhof mirrors Heimatbahnhof→Zuhause
-mirrorTransfer('bahn-hin-ts',  'bahn-rueck-te');
-// Bahn: Rule B — Bahnhof→Ziel mirrors Rückfahrt-Bahnhof
-mirrorTransfer('bahn-hin-te',  'bahn-rueck-ts');
-// Flug: Rule A — Zuhause→Flughafen mirrors Heimatflughafen→Zuhause
-mirrorTransfer('flug-hin-ts',  'flug-rueck-te');
-// Flug: Rule B — Flughafen→Ziel mirrors Rückflug-Flughafen
-mirrorTransfer('flug-hin-te',  'flug-rueck-ts');
-// Auto: Rule A — Zuhause→Fuhrpark mirrors Fuhrpark→Zuhause
-mirrorTransfer('auto-tr-hs',   'auto-tr-re');
-// Auto: Rule B — Parkplatz→Ziel mirrors Weg zum Fahrzeug
-mirrorTransfer('auto-tr-he',   'auto-tr-rs');
 
 // ── Results page prio tiles ──────────────────────────────────────────────────
-var _lastItems = []; // store last computed items for re-sort
 document.addEventListener('click', function(e){
-  // Close prio info box when clicking outside
   var infoBox = document.getElementById('prio-info-box');
   var infoBtn = document.getElementById('prio-info-btn');
   if(infoBox && !infoBox.contains(e.target) && infoBtn && !infoBtn.contains(e.target)){
     infoBox.style.display='none';
   }
 });
-// Toggle info box display
-document.addEventListener('DOMContentLoaded', function(){
-  var ib=document.getElementById('prio-info-box');
-  if(ib) ib.addEventListener('click', function(e){ e.stopPropagation(); });
-});
 
 document.querySelectorAll('[data-prio-r]').forEach(function(t){
   t.addEventListener('click', function(){
     state.priority = t.dataset.prioR;
-    // Sync with page-1 tiles
     document.querySelectorAll('[data-prio]').forEach(function(x){ x.classList.toggle('active', x.dataset.prio===state.priority); });
     document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
-    // Re-sort and re-render
     if(_lastItems.length > 0){
       function scoreItem(item){
         var p=state.priority, cost=item.total, timeMin=(item.dH||0)+(item.dR||0);
@@ -1991,240 +1771,22 @@ document.querySelectorAll('[data-prio-r]').forEach(function(t){
       }
       _lastItems.forEach(function(item){ item.score=scoreItem(item); });
       _lastItems.sort(function(a,b){ return a.score-b.score; });
-      renderResults(_lastItems.slice());
-    }
-  });
-});
-
-// ── Overview screen ──────────────────────────────────────────────────────────
-function updateOvHotel(){
-  var nights=calcNights(state.hD,state.rD);
-  var total=nights*state.hotelPrice;
-  var box=document.getElementById('ov-hotel');
-  if(!box)return;
-  box.style.display=nights>0?'block':'none';
-  document.getElementById('ov-hotel-chip').textContent=nights+' Übernachtung'+(nights>1?'en':'');
-  document.getElementById('ov-hotel-price').value=state.hotelPrice;
-  document.getElementById('ov-hotel-total').textContent='= '+new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(total);
-}
-
-// ── Work-time segment table helpers ──────────────────────────────────────────
-function buildWorkOpts15(maxMin, currentVal){
-  // 10-minute steps, max = actual segment duration
-  var opts='<option value="0">Keine</option>';
-  for(var m=10; m<=maxMin; m+=10){
-    var h=Math.floor(m/60), r=m%60;
-    var lbl = h>0?(r>0?h+'h '+r+'min':h+'h'):r+'min';
-    opts+='<option value="'+m+'"'+(m===currentVal?' selected':'')+'>'+lbl+'</option>';
-  }
-  return opts;
-}
-function ovWorkRow(icon, label, durMin, fieldId, disabled){
-  var durStr = durMin>0 ? durS(durMin) : '—';
-  if(disabled || durMin<=0){
-    return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td>'
-      +'<td class="ov-work-dur">'+durStr+'</td>'
-      +'<td><span class="ov-work-na">nicht arbeitsfähig</span></td></tr>';
-  }
-  var cur = parseInt(document.getElementById(fieldId)?document.getElementById(fieldId).value:0)||0;
-  return '<tr><td class="ov-work-seg">'+icon+' '+label+'</td>'
-    +'<td class="ov-work-dur">'+durStr+'</td>'
-    +'<td><select class="ov-work-sel" data-field-id="'+fieldId+'" onchange="syncWorkField(this.dataset.fieldId,this.value)">'
-    +buildWorkOpts15(durMin, cur)+'</select></td></tr>';
-}
-function syncWorkField(fieldId, val){
-  var el=document.getElementById(fieldId);
-  if(el){ el.value=val; el.dispatchEvent(new Event('change')); }
-}
-
-function buildOverview(items){
-  var nights=calcNights(state.hD,state.rD);
-  // Zeitraum
-  var zr=document.getElementById('ov-zeitraum');
-  if(zr){
-    zr.innerHTML='<div>↗ <strong>Hinreise:</strong> '+fDT(state.hD,state.hT)+'</div>'
-      +'<div>↙ <strong>Rückreise:</strong> '+fDT(state.rD,state.rT)+'</div>'
-      ; // Hotel shown separately below with editable price
-  }
-
-  // rpill
-  var rp=document.getElementById('rpill-overview');
-  if(rp) rp.innerHTML='<strong>'+state.startText+'</strong> <span class="rarrow">⇄</span> <strong>'+state.zielText+'</strong>'
-    +'<span class="rmeta">↗ '+fD(state.hD)+' · ↙ '+fD(state.rD)+'</span>';
-
-  // Transport cards
-  var con=document.getElementById('ov-transport-container');
-  if(!con)return;
-  var icons={auto:'🚗',bahn:'🚆',flug:'✈️','kombi-bahn-flug':'🚆✈️','kombi-flug-bahn':'✈️🚆'};
-  var html='';
-  // Only show pure transport options (no combos — shown on results page)
-  // Sort: auto → bahn → flug
-  var ORDER = {auto:0, bahn:1, flug:2};
-  var sortedItems = items.filter(function(item){ return item.id==='auto'||item.id==='bahn'||item.id==='flug'; })
-    .sort(function(a,b){ return (ORDER[a.id]||9)-(ORDER[b.id]||9); });
-  sortedItems.forEach(function(item){
-    var tColor={auto:'rgba(251,191,36,0.15)',bahn:'rgba(52,211,153,0.12)',flug:'rgba(96,165,250,0.12)'}[item.transport]||'rgba(255,255,255,0.06)';
-    var borderColor={auto:'rgba(251,191,36,0.3)',bahn:'rgba(52,211,153,0.3)',flug:'rgba(96,165,250,0.3)'}[item.transport]||'var(--br)';
-    html+='<div style="background:'+tColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:14px 16px;margin-bottom:10px">';
-    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
-    html+='<span style="font-size:20px">'+(icons[item.id]||'🚌')+'</span>';
-    html+='<strong style="font-size:14px">'+item.label+'</strong>';
-    // Editable price
-    var itemId = item.id;
-    var transportCost = (item.total-(item.hotel||0)-(item.extras||0)).toFixed(2);
-    html+='<div style="margin-left:auto;display:flex;align-items:center;gap:6px">';
-    html+='<span style="font-size:11px;color:var(--muted)">Gesamtpreis:</span>';
-    html+='<input class="inpsm" type="number" min="0" step="0.01" style="max-width:90px;text-align:right" '
-      +'data-item-id="'+itemId+'" '
-      +'value="'+transportCost+'" '
-      +'oninput="updateOvPriceById(this.dataset.itemId, this.value)">';
-    html+='<span style="font-size:11px;color:var(--muted)">€</span></div>';
-    html+='</div>';
-    // Journey details
-    if(item.showTimes&&item.hinDep){
-      html+='<div style="font-size:12px;color:var(--muted);line-height:1.8">';
-      html+='↗ '+item.hinDep+' → '+item.hinArr+' ('+durS(item.hinDur)+')';
-      if(item.rueckDep) html+='&nbsp;&nbsp;↙ '+item.rueckDep+' → '+item.rueckArr+' ('+durS(item.rueckDur)+')';
-      html+='</div>';
-    }
-    // Transfer summary
-    var tparts=[];
-    if(item.trHinStart>0) tparts.push('Anreise Hin: '+durS(item.trHinStart));
-    if(item.trHinEnd>0) tparts.push('Transfer Ziel: '+durS(item.trHinEnd));
-    if(item.trRueckStart>0) tparts.push('Anreise Rück: '+durS(item.trRueckStart));
-    if(item.trRueckEnd>0) tparts.push('Transfer Heim: '+durS(item.trRueckEnd));
-    if(tparts.length) html+='<div style="font-size:11px;color:var(--blue);margin-top:4px">🚌 '+tparts.join(' · ')+'</div>';
-    html+='</div>';
-  });
-  con.innerHTML=html||'<p style="color:var(--muted);font-size:13px">Keine Optionen eingetragen.</p>';
-  updateOvHotel();
-
-  // ── Arbeitszeit-Tabelle ────────────────────────────────────────────────────
-  var workSection = document.getElementById('ov-work-section');
-  var workCon     = document.getElementById('ov-work-container');
-  if(!workSection || !workCon) return;
-
-  if(!state.canWorkDuringTravel){
-    workSection.style.display='none';
-    return;
-  }
-  workSection.style.display='block';
-
-  var workHtml='';
-  // Sort work table: bahn first, then flug
-  var workItems = items.filter(function(it){ return it.id==='bahn'||it.id==='flug'; })
-    .sort(function(a,b){ return (a.id==='bahn'?0:1)-(b.id==='bahn'?0:1); });
-  workItems.forEach(function(item){
-    var isBahn = item.id==='bahn';
-    var icon   = isBahn?'🚆':'✈️';
-    var label  = item.label;
-    // Hin segment durations
-    var trHinStart  = item.trHinStart||0;
-    var trHinEnd    = item.trHinEnd||0;
-    var mainHinDur  = item.hinDur||0;
-    // Rück segment durations
-    var trRueckStart= item.trRueckStart||0;
-    var trRueckEnd  = item.trRueckEnd||0;
-    var mainRueckDur= item.rueckDur||0;
-    // Gate time for flug (90 min puffer split: 60 min gate, 30 min security buffer)
-    var gateDur = isBahn?0:60; // 60 min usable at gate out of 90-min puffer
-
-    var hinDepSt   = item.hinDepSt   || '';
-    var hinArrSt   = item.hinArrSt   || '';
-    var rueckDepSt = item.rueckDepSt || '';
-    var rueckArrSt = item.rueckArrSt || '';
-
-    workHtml += '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px">';
-    workHtml += '<div style="font-size:13px;font-weight:700;margin-bottom:8px">'+icon+' '+label+' – Hinreise</div>';
-    workHtml += '<table class="ov-work-table">';
-    if(isBahn){
-      workHtml += ovWorkRow('🚌','Weg zum Bahnhof '+(hinDepSt||''), trHinStart, '', true);
-      workHtml += ovWorkRow('🚆','Fahrt '+(hinDepSt||'')+(hinArrSt?' → '+hinArrSt:''), mainHinDur, 'bahn-hin-work', false);
-      workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
-    } else {
-      // Flug: always show rows, even if no times entered
-      var noTimesHint = mainHinDur===0 ? ' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>' : '';
-      workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(hinDepSt||''), trHinStart, '', true);
-      workHtml += ovWorkRow('🛂','Am Gate'+noTimesHint, gateDur, 'flug-hin-gate-work', false);
-      workHtml += ovWorkRow('✈️','Flugzeit '+(hinDepSt&&hinArrSt?hinDepSt+' → '+hinArrSt:(hinDepSt||'')), mainHinDur, 'flug-hin-work', mainHinDur===0);
-      workHtml += ovWorkRow('🚌','Weg zum Ziel '+(hinArrSt||''), trHinEnd, '', true);
-    }
-    workHtml += '</table>';
-
-    workHtml += '<div style="font-size:13px;font-weight:700;margin:12px 0 8px">'+icon+' '+label+' – Rückreise</div>';
-    workHtml += '<table class="ov-work-table">';
-    if(isBahn){
-      workHtml += ovWorkRow('🚌','Weg zum Bahnhof '+(rueckDepSt||''), trRueckStart, '', true);
-      workHtml += ovWorkRow('🚆','Fahrt '+(rueckDepSt||'')+(rueckArrSt?' → '+rueckArrSt:''), mainRueckDur, 'bahn-rueck-work', false);
-      workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
-    } else {
-      var noTimesHintR = mainRueckDur===0 ? ' <span style="color:var(--muted);font-size:10px">(Zeiten auf Seite 2 eintragen)</span>' : '';
-      workHtml += ovWorkRow('🚌','Weg zum Flughafen '+(rueckDepSt||''), trRueckStart, '', true);
-      workHtml += ovWorkRow('🛂','Am Gate'+noTimesHintR, gateDur, 'flug-rueck-gate-work', false);
-      workHtml += ovWorkRow('✈️','Flugzeit '+(rueckDepSt&&rueckArrSt?rueckDepSt+' → '+rueckArrSt:(rueckDepSt||'')), mainRueckDur, 'flug-rueck-work', mainRueckDur===0);
-      workHtml += ovWorkRow('🚌','Weg nach Hause '+(rueckArrSt||''), trRueckEnd, '', true);
-    }
-    workHtml += '</table></div>';
-  });
-
-  if(!workHtml) workHtml='<p style="color:var(--muted);font-size:13px">Keine Verbindungszeiten eingetragen.</p>';
-  workCon.innerHTML=workHtml;
-}
-
-function updateOvPrice(itemId, newVal){
-  var parsed=parseFloat(newVal)||0;
-  if(itemId==='auto'){
-    var el=document.getElementById('auto-kosten');
-    if(el){el.value=parsed.toFixed(2);updateAutoBadge();}
-  } else if(itemId==='bahn'){
-    var half=(parsed/2).toFixed(2);
-    var h=document.getElementById('bahn-hin-price'),r=document.getElementById('bahn-rueck-price');
-    if(h)h.value=half;if(r)r.value=half;updateBahnBadge();
-  } else if(itemId==='flug'){
-    var half2=(parsed/2).toFixed(2);
-    var h2=document.getElementById('flug-hin-price'),r2=document.getElementById('flug-rueck-price');
-    if(h2)h2.value=half2;if(r2)r2.value=half2;updateFlugBadge();
-  }
-}
-function updateOvPriceById(itemId, newVal){
-  updateOvPrice(itemId, newVal);
-}
-
-document.getElementById('btn-s-overview').addEventListener('click',function(){
-  // Re-trigger calculation from current field values and go to results
-  document.getElementById('btn-s3').click();
-  // btn-s3 now shows s-overview; override to go to results
-  setTimeout(function(){
-    if(_lastItems.length>0){
-      document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
       renderResults(_lastItems);
-      showScreen('s-results');
     }
-  },50);
+  });
 });
 
-// ── Omio Guide ───────────────────────────────────────────────────────────────
-function toggleGuide(){
-  var btn = document.getElementById('guide-toggle-btn');
-  var box = document.getElementById('guide-box');
-  btn.classList.toggle('open');
-  box.classList.toggle('open');
-}
-function switchGuideTab(tab){
-  // Tab buttons
-  document.getElementById('tab-bahn').classList.toggle('active', tab==='bahn');
-  document.getElementById('tab-flug').classList.toggle('active', tab==='flug');
-  // Content panels
-  document.getElementById('guide-bahn').classList.toggle('active', tab==='bahn');
-  document.getElementById('guide-flug').classList.toggle('active', tab==='flug');
+// ── Cost view toggle ─────────────────────────────────────────────────────────
+function setCostView(view){
+  state.costView = view;
+  document.getElementById('cv-perperson').classList.toggle('active', view==='perperson');
+  document.getElementById('cv-total').classList.toggle('active', view==='total');
+  if(_lastItems.length > 0){ renderResults(_lastItems); }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ────────────────────────────────────────────────────────────────────
 updateHotelUI();
 updateAutoOverlay();
 </script>
 </body>
-</html  // S1: hotel managed on page 3 overview
-  const hpEl=document.getElementById("hotel-price");
-  if(hpEl) hpEl.value=state.hotelPrice;
-  >
+</html>
