@@ -2261,16 +2261,19 @@ document.querySelectorAll('[data-prio-r]').forEach(function(t){
     document.querySelectorAll('[data-prio]').forEach(function(x){ x.classList.toggle('active', x.dataset.prio===state.priority); });
     document.querySelectorAll('[data-prio-r]').forEach(function(x){ x.classList.toggle('active', x.dataset.prioR===state.priority); });
     if(_lastItems.length > 0){
-      function scoreItem(item){
+      var scoreItem=function(item){
         var p=state.priority, cost=item.total;
         var timeMin=(item.dH||0)+(item.dR||0);
         var effTime=Math.max(0, timeMin - ((item.wH||0)+(item.wR||0))*WORK_EFFICIENCY);
         if(p==='cost') return cost/10+effTime/120;
         if(p==='time') return cost/40+effTime/30;
         return cost/20+effTime/60;
-      }
+      };
       _lastItems.forEach(function(item){ item.score=scoreItem(item); });
-      _lastItems.sort(function(a,b){ return a.score-b.score; });
+      // Sort fresh copy, update _lastItems, then render
+      var sorted=_lastItems.slice().sort(function(a,b){ return a.score-b.score; });
+      _lastItems.length=0;
+      sorted.forEach(function(x){ _lastItems.push(x); });
       renderResults(_lastItems);
     }
   });
