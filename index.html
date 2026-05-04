@@ -1032,10 +1032,10 @@ document.querySelectorAll("[data-work]").forEach(function(t){
 function updateWorkVisibility(){ /* no-op: work UI now on page 3 */ }
 
 // ── Priority tiles ────────────────────────────────────────────────────────────
-document.querySelectorAll(".prio-tile").forEach(t=>{
+document.querySelectorAll("[data-prio]").forEach(t=>{
   t.addEventListener("click",()=>{
     state.priority=t.dataset.prio;
-    document.querySelectorAll(".prio-tile").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll("[data-prio]").forEach(x=>x.classList.remove("active"));
     t.classList.add("active");
   });
 });
@@ -1894,17 +1894,17 @@ function parseOmioCombined(transport){
   if(priceMatch){
     var pax=parseInt(priceMatch[1]);
     var total=parseFloat(priceMatch[2].replace(',','.'));
-    var totalForGroup=(total/pax)*state.persons;
-    priceNote='⚠ Gesamtpreis: '+totalForGroup.toFixed(2).replace('.',',')+'€';
-    if(state.persons!==pax) priceNote+=' (umgerechnet für '+state.persons+' Person'+(state.persons>1?'en':'')+')';
+    // Price is per person — Omio shows price for pax people, we want per person
+    var pricePerPerson=(total/pax);
+    priceNote='💡 Preis pro Person: '+pricePerPerson.toFixed(2).replace('.',',')+'€';
     priceNote+=' — Hinpreis eintragen → Rückpreis wird automatisch berechnet';
     var hinEl=document.getElementById(transport+'-hin-price');
     var rueckEl=document.getElementById(transport+'-rueck-price');
-    if(hinEl){hinEl.value='';hinEl.dataset.priceTotal=totalForGroup.toFixed(2);hinEl.placeholder='z.B. '+(totalForGroup/2).toFixed(0)+' (Summe: '+totalForGroup.toFixed(0)+' €)';}
-    if(rueckEl){rueckEl.value='';rueckEl.dataset.priceTotal=totalForGroup.toFixed(2);rueckEl.placeholder='z.B. '+(totalForGroup/2).toFixed(0)+' (Summe: '+totalForGroup.toFixed(0)+' €)';}
+    if(hinEl){hinEl.value='';hinEl.dataset.priceTotal=pricePerPerson.toFixed(2);hinEl.placeholder='z.B. '+(pricePerPerson/2).toFixed(0)+' (Summe: '+pricePerPerson.toFixed(0)+' € /Person)';}
+    if(rueckEl){rueckEl.value='';rueckEl.dataset.priceTotal=pricePerPerson.toFixed(2);rueckEl.placeholder='z.B. '+(pricePerPerson/2).toFixed(0)+' (Summe: '+pricePerPerson.toFixed(0)+' € /Person)';}
     activatePriceMirror(transport);
     var badge=document.getElementById(transport+'-cost-badge');
-    if(badge){var pricePerPerson=totalForGroup/state.persons;badge.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(pricePerPerson);badge.title='Preis pro Person (aus Omio)';}
+    if(badge){badge.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(pricePerPerson);badge.title='Preis pro Person (aus Omio)';}
   }
   var msg='✓ Zeiten eingetragen: '+found.join(' · ');
   if(!isRoundTrip&&deps.length===1) msg+=' — nur Hinreise erkannt';
