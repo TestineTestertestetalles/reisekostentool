@@ -1916,22 +1916,41 @@ function activatePriceMirror(transport){
   var hinEl=document.getElementById(transport+'-hin-price');
   var rueckEl=document.getElementById(transport+'-rueck-price');
   if(!hinEl||!rueckEl) return;
-  function calcOther(srcEl,dstEl){
-    var total=parseFloat(srcEl.dataset.priceTotal);
-    if(isNaN(total)||total<=0) return;
-    var entered=parseFloat(srcEl.value);
-    if(isNaN(entered)||entered<0){dstEl.value='';return;}
-    var other=Math.max(0,total-entered);
-    dstEl.value=other.toFixed(2);
-    if(transport==='bahn') updateBahnBadge();
-    if(transport==='flug') updateFlugBadge();
+  // Remove stale mirror listeners by replacing with fresh clones (no dataset carry-over)
+  var newHin=document.createElement('input');
+  var newRueck=document.createElement('input');
+  // Copy essential attributes only (NOT dataset.priceTotal — that's set fresh by parser)
+  ['type','class','id','min','step','placeholder','style'].forEach(function(a){
+    if(hinEl.hasAttribute(a)) newHin.setAttribute(a,hinEl.getAttribute(a));
+    if(rueckEl.hasAttribute(a)) newRueck.setAttribute(a,rueckEl.getAttribute(a));
+  });
+  // Copy req-field class explicitly
+  newHin.className = hinEl.className;
+  newRueck.className = rueckEl.className;
+  hinEl.parentNode.replaceChild(newHin, hinEl);
+  rueckEl.parentNode.replaceChild(newRueck, rueckEl);
+  // Now set the per-person priceTotal on the fresh elements from parser data
+  // (caller sets this after activatePriceMirror, so read from original element's dataset)
+  // Actually parser sets priceTotal on original BEFORE calling activatePriceMirror
+  // We need to transfer it to the new elements
+  // Solution: let caller pass priceTotal explicitly
+  function setupMirror(srcEl, dstEl, updateFn){
+    srcEl.addEventListener('input', function(){
+      var total = parseFloat(srcEl.dataset.priceTotal);
+      if(!isNaN(total) && total > 0){
+        var entered = parseFloat(srcEl.value) || 0;
+        var other = Math.max(0, total - entered);
+        dstEl.value = other.toFixed(2);
+      }
+      updateFn();
+    });
   }
-  var newHin=hinEl.cloneNode(true);
-  var newRueck=rueckEl.cloneNode(true);
-  hinEl.parentNode.replaceChild(newHin,hinEl);
-  rueckEl.parentNode.replaceChild(newRueck,rueckEl);
-  newHin.addEventListener('input',function(){calcOther(newHin,newRueck);updateBahnBadge();updateFlugBadge();});
-  newRueck.addEventListener('input',function(){calcOther(newRueck,newHin);updateBahnBadge();updateFlugBadge();});
+  var updateFn = transport==='bahn' ? updateBahnBadge : updateFlugBadge;
+  setupMirror(newHin, newRueck, updateFn);
+  setupMirror(newRueck, newHin, updateFn);
+  // Transfer priceTotal from original elements (already set by parser)
+  if(hinEl.dataset && hinEl.dataset.priceTotal) newHin.dataset.priceTotal = hinEl.dataset.priceTotal;
+  if(rueckEl.dataset && rueckEl.dataset.priceTotal) newRueck.dataset.priceTotal = rueckEl.dataset.priceTotal;
 }
 
 // ── Transfer time mirroring ───────────────────────────────────────────────────
