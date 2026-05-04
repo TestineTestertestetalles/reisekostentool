@@ -312,6 +312,13 @@ input.req-field:focus{
 .omio-info-section h4{font-size:12px;font-weight:700;color:var(--blue);margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.06em;}
 .omio-info-section p{font-size:12px;color:var(--muted);line-height:1.6;margin:0;}
 .omio-info-section strong{color:var(--text);}
+/* ── Easter Egg Toast ── */
+.ee-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);
+  background:#1a1a2e;border:1px solid rgba(251,191,36,0.4);border-radius:10px;
+  padding:12px 20px;font-size:13px;color:var(--text);z-index:9999;
+  opacity:0;transition:opacity 0.4s ease,transform 0.4s ease;pointer-events:none;
+  white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.ee-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
@@ -419,7 +426,7 @@ input.req-field:focus{
   <!-- Transport selector -->
   <div class="card" style="margin-bottom:10px">
     <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span>🚀 Welche Reisemittel stehen zur Verfügung?</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Wähle die bei dir am Startpunkt verfügbaren Möglichkeiten aus: Gibt es einen Flughafen, Bahnhof oder Fuhrpark in der Nähe?</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Wähle die am Start-/Zielort verfügbaren Möglichkeiten aus: Gibt es einen Flughafen, Bahnhof oder Fuhrpark in der Nähe?</p>
     <div style="display:flex;gap:8px">
       <div class="transport-tile active bahn" id="tt-bahn" onclick="toggleTransportTile('bahn')">
         <div class="pt-icon">🚆</div>
@@ -803,7 +810,7 @@ input.req-field:focus{
   <!-- 💼 Arbeitszeit-Abfrage auf Seite 3 -->
   <div class="card" style="margin-bottom:10px">
     <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span> 💼 Arbeiten während der Reise</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Laptop, Unterlagen, Telefonate)</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Kann während der Reise produktiv gearbeitet werden? (z.&thinsp;B. Unterlagen sichten, Präsentationen erstellen, Konzepte erarbeiten, LinkedIn Learning)</p>
     <div class="work-grid">
       <div class="prio-tile" data-work="yes" id="work-tile-yes">
         <div class="prio-tile-icon">✅</div>
@@ -2328,10 +2335,34 @@ function applyTransportVisibility(){
   });
 }
 
+// ── Easter Egg ───────────────────────────────────────────────────────────────
+(function(){
+  var toastTimer;
+  function showEeToast(msg){
+    var t=document.getElementById('ee-toast');
+    if(!t) return;
+    clearTimeout(toastTimer);
+    t.textContent=msg;
+    t.classList.add('show');
+    toastTimer=setTimeout(function(){ t.classList.remove('show'); }, 4500);
+  }
+  var autoEl=document.getElementById('auto-kosten');
+  if(autoEl){
+    autoEl.addEventListener('change',function(){
+      if(parseFloat(this.value)===0 && this.value.trim()!==''){
+        setTimeout(function(){
+          showEeToast('🎁 Kostenloser Firmenwagen? Jemand hat gute Karten beim nächsten Mitarbeitergespräch.');
+        }, 300);
+      }
+    });
+  }
+})();
+
 // ── Init ────────────────────────────────────────────────────────────────────
 updateHotelUI();
 updateAutoOverlay();
 </script>
 
+<div class="ee-toast" id="ee-toast"></div>
 </body>
 </html>
