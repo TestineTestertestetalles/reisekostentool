@@ -293,8 +293,9 @@ input.req-field:focus{
 <!-- HEADER (shown on all screens) -->
 <div class="hdr">
   <div class="badge"><span class="pulse"></span> 100 % KOSTENLOS &middot; KEINE REGISTRIERUNG</div>
-  <h1>Dienstreise<br><span>clever planen.</span></h1>
-  <p class="sub">3 Schritte zum besten Reisevergleich.</p>
+  <h1>Reisekostentool</h1>
+  <p style="font-size:18px;font-weight:600;color:var(--text);margin-top:6px;margin-bottom:4px">In 10 Minuten zum Ergebnis.</p>
+  <p class="sub">Dienstreise clever planen.</p>
 </div>
 
 <!-- STEP DOTS -->
@@ -1254,6 +1255,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       :"";
     items.push({
       id:"auto",icon:"🚗",label:"Auto",total,hotel:hotelTotal,nights,extras:0,
+      transport:"auto",persons:state.persons,numCars,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:nights>0?"Mit Übernachtung":"Gleichtag",badgeCls:nights>0?"rbo":"rbg",
       costDetail:eur(autoKTotal)+" Fahrt"+autoPersonLabel+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
@@ -1285,6 +1287,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const bahnPersonLabel=state.persons>1?" ("+state.persons+" × "+eur(bhPperPerson+brPperPerson)+"/Pers.)":"";
     items.push({
       id:"bahn",icon:"🚆",label:"Deutsche Bahn",total,hotel:hotelTotal,nights,extras,
+      transport:"bahn",persons:state.persons,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:"Sparpreis",badgeCls:"rbg",
       costDetail:eur(transport)+bahnPersonLabel+(extras?" + "+eur(extras)+" Extras":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
@@ -1318,6 +1321,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
     const flugPersonLabel=state.persons>1?" ("+state.persons+" × "+eur(fhPperPerson+frPperPerson)+"/Pers.)":"";
     items.push({
       id:"flug",icon:"✈️",label:"Flug + Transfer",total,hotel:hotelTotal,nights,extras,
+      transport:"flug",persons:state.persons,pricePerPerson:fhPperPerson+frPperPerson,
       dH,dR,wH,wR,score:score(total,dH+dR),
       badge:"Flug",badgeCls:"rbm",
       costDetail:eur(transport)+flugPersonLabel+(extras?" + "+eur(extras)+" Gepäck":"")+(hotelTotal>0?" + "+eurR(hotelTotal)+" Hotel":""),
