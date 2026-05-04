@@ -407,7 +407,7 @@ input.req-field:focus{
   <!-- Transport selector -->
   <div class="card" style="margin-bottom:10px">
     <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span>🚀 Welche Reisemittel stehen zur Verfügung?</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Auf Seite 2 werden nur die ausgewählten Verkehrsmittel angezeigt.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Wähle die bei dir am Startpunkt verfügbaren Möglichkeiten aus: Gibt es einen Flughafen, Bahnhof oder Fuhrpark in der Nähe?</p>
     <div style="display:flex;gap:8px">
       <div class="transport-tile active bahn" id="tt-bahn" onclick="toggleTransportTile('bahn')">
         <div class="pt-icon">🚆</div>
@@ -428,6 +428,17 @@ input.req-field:focus{
     </div>
   </div>
 
+
+  <div class="err" id="err-s1"></div>
+  <button class="btnp" id="btn-s1">Verbindungssuche →</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SCREEN 3 – PREISE
+════════════════════════════════════════════ -->
+<div class="screen" id="s-prices">
+  <button class="backbtn" data-back="s-form">← Zurück</button>
+  <div class="rpill" id="rpill-prices"></div>
   <div style="height:8px"></div>
   <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
   <a class="btn-omio" href="https://www.omio.at" target="_blank" rel="noopener noreferrer">👉 Bei Omio suchen ↗</a>
@@ -534,18 +545,14 @@ input.req-field:focus{
     </div>
   </div>
 
-  <div class="err" id="err-s1"></div>
-  <button class="btnp" id="btn-s1">Preise &amp; Zeiten eintragen →</button>
-</div>
-
-<!-- ════════════════════════════════════════════
-     SCREEN 3 – PREISE
-════════════════════════════════════════════ -->
-<div class="screen" id="s-prices">
-  <button class="backbtn" data-back="s-form">← Zurück</button>
-  <div class="rpill" id="rpill-prices"></div>
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
+
+  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
+    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
+  </div>
+
+
 
   <!-- BAHN -->
   <div class="tblock bahn">
@@ -705,13 +712,7 @@ input.req-field:focus{
       <div style="font-size:13px;font-weight:700;color:var(--red)">Nicht verfügbar</div>
       <div style="font-size:11px;color:var(--muted);max-width:200px;line-height:1.5">Kein gültiger Führerschein vorhanden. Auto-Option ausgeschlossen.</div>
     </div>
-  </div>
-
-  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
-    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
-  </div>
-
-  <div class="err" id="err-s3"></div>
+  </div>  <div class="err" id="err-s3"></div>
   <div style="height:6px"></div>
   <button class="btnp" id="btn-s3">Reiseübersicht anzeigen →</button>
 </div>
@@ -2245,5 +2246,6 @@ function applyTransportVisibility(){
 updateHotelUI();
 updateAutoOverlay();
 </script>
+
 </body>
 </html>
