@@ -1842,7 +1842,7 @@ function parseOmioCombined(transport){
     if(rueckEl){rueckEl.value='';rueckEl.dataset.priceTotal=totalForGroup.toFixed(2);rueckEl.placeholder='z.B. '+(totalForGroup/2).toFixed(0)+' (Summe: '+totalForGroup.toFixed(0)+' €)';}
     activatePriceMirror(transport);
     var badge=document.getElementById(transport+'-cost-badge');
-    if(badge){badge.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(totalForGroup);badge.title='Gesamtpreis aus Omio (ohne Hotel)';}
+    if(badge){var pricePerPerson=totalForGroup/state.persons;badge.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(pricePerPerson);badge.title='Preis pro Person (aus Omio)';}
   }
   var msg='✓ Zeiten eingetragen: '+found.join(' · ');
   if(!isRoundTrip&&deps.length===1) msg+=' — nur Hinreise erkannt';
