@@ -1458,10 +1458,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
       rueckDepSt:getSt("flug-rueck-dep-station"),rueckArrSt:getSt("flug-rueck-arr-station"),
       hinDep:bahnHinDep,hinArr:gs("bahn-hin-arr"),hinDur:dmH,
-      rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR,
-      hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
-      rueckDepSt:getSt("flug-rueck-dep-station"),rueckArrSt:getSt("flug-rueck-arr-station"),
-      transport:"flug"
+      rueckDep:flugRueckDep,rueckArr:gs("flug-rueck-arr"),rueckDur:dmR
     });
   }
   // Combo B: Flug Hin + Bahn Rück
@@ -1486,10 +1483,7 @@ document.getElementById("btn-s3").addEventListener("click",()=>{
       hinDepSt:getSt("flug-hin-dep-station"),hinArrSt:getSt("flug-hin-arr-station"),
       rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
       hinDep:flugHinDep,hinArr:gs("flug-hin-arr"),hinDur:dmH,
-      rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR,
-      hinDepSt:getSt("bahn-hin-dep-station"),hinArrSt:getSt("bahn-hin-arr-station"),
-      rueckDepSt:getSt("bahn-rueck-dep-station"),rueckArrSt:getSt("bahn-rueck-arr-station"),
-      transport:"bahn"
+      rueckDep:bahnRueckDep,rueckArr:gs("bahn-rueck-arr"),rueckDur:dmR
     });
   }
   if(!items.length){
