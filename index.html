@@ -1658,7 +1658,7 @@ function renderCard(item,isBest,allItems){
       <div>
         <span class="rname">${item.label}</span>
         <span class="rbadge ${item.badgeCls}">${item.badge}</span>
-        ${persons>1?`<span class="persons-badge">👥 ${persons} Personen</span>`:""}
+        ${persons>1&&showTotal?`<span class="persons-badge">👥 ${persons} Personen</span>`:""}
       </div>
       <div class="rcard-total ${isBest?"gold":"normal"}" style="font-size:14px;text-align:right">
         <div class="cost-per-person-lbl">${showTotal?"Gesamt ("+persons+" Pers.)":"pro Person"}</div>
@@ -2107,11 +2107,20 @@ function buildOverview(items){
     html+='<span style="font-size:20px">'+(icons[item.id]||'🚌')+'</span>';
     html+='<strong style="font-size:14px">'+item.label+'</strong>';
     var itemId=item.id;
+    // Show price as entered on page 2:
+    // Auto: total for all autos (as entered)
+    // Bahn/Flug: per person price (as entered) — NOT the group total
     var transportCostRaw=item.total-(item.hotel||0)-(item.extras||0);
+    var displayPrice = (item.transport==='auto')
+      ? transportCostRaw              // Auto: user entered total directly
+      : (item.pricePerPerson||0);     // Bahn/Flug: per-person as entered on p2
+    var priceLabel = (item.transport==='auto')
+      ? 'Gesamtpreis:'
+      : 'Preis/Person:';
     html+='<div style="margin-left:auto;display:flex;align-items:center;gap:6px">';
-    html+='<span style="font-size:11px;color:var(--muted)">Gesamtpreis:</span>';
+    html+='<span style="font-size:11px;color:var(--muted)">'+priceLabel+'</span>';
     html+='<input class="inpsm" type="number" min="0" step="0.01" style="max-width:90px;text-align:right" '
-      +'data-item-id="'+itemId+'" value="'+transportCostRaw.toFixed(2)+'" '
+      +'data-item-id="'+itemId+'" value="'+displayPrice.toFixed(2)+'" '
       +'oninput="updateOvPriceById(this.dataset.itemId,this.value)">';
     html+='<span style="font-size:11px;color:var(--muted)">€</span></div>';
     html+='</div>';
