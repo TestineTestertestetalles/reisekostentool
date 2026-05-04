@@ -285,6 +285,21 @@ input.req-field:focus{
 .cost-view-tile .prio-tile-label{font-size:13px;font-weight:700;color:var(--text);}
 .cost-view-tile.active .prio-tile-label{color:var(--blue);}
 .cost-view-tile .prio-tile-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+/* ── Transport selector (page 1) ── */
+.transport-tile{flex:1;padding:12px 8px;border-radius:8px;text-align:center;cursor:pointer;
+  transition:all 0.15s;border:1.5px solid var(--br);background:var(--s1);position:relative;}
+.transport-tile.active{border-color:rgba(52,211,153,0.5);background:rgba(52,211,153,0.08);}
+.transport-tile.active.auto{border-color:rgba(251,191,36,0.5);background:rgba(251,191,36,0.06);}
+.transport-tile.active.flug{border-color:rgba(96,165,250,0.5);background:rgba(96,165,250,0.08);}
+.transport-tile.disabled{opacity:0.45;cursor:not-allowed;}
+.transport-tile .pt-icon{font-size:22px;margin-bottom:4px;}
+.transport-tile .pt-label{font-size:12px;font-weight:700;color:var(--text);}
+.transport-tile.active .pt-label{color:var(--green);}
+.transport-tile.active.auto .pt-label{color:var(--gold);}
+.transport-tile.active.flug .pt-label{color:var(--blue);}
+.transport-tile .pt-check{position:absolute;top:5px;right:5px;font-size:11px;
+  opacity:0;transition:opacity 0.15s;}
+.transport-tile.active .pt-check{opacity:1;}
 </style>
 </head>
 <body>
@@ -388,6 +403,30 @@ input.req-field:focus{
   <!-- Work card moved to page 3 (s-overview) -->
   <!-- hotel managed on page 3 -->
   <input type="hidden" id="hotel-price" value="100">
+
+  <!-- Transport selector -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle"><span class="cdot" style="background:var(--purple)"></span>🚀 Welche Reisemittel stehen zur Verfügung?</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Auf Seite 2 werden nur die ausgewählten Verkehrsmittel angezeigt.</p>
+    <div style="display:flex;gap:8px">
+      <div class="transport-tile active bahn" id="tt-bahn" onclick="toggleTransportTile('bahn')">
+        <div class="pt-icon">🚆</div>
+        <div class="pt-label">Bahn</div>
+        <div class="pt-check">✓</div>
+      </div>
+      <div class="transport-tile active flug" id="tt-flug" onclick="toggleTransportTile('flug')">
+        <div class="pt-icon">✈️</div>
+        <div class="pt-label">Flug</div>
+        <div class="pt-check">✓</div>
+      </div>
+      <div class="transport-tile auto" id="tt-auto" onclick="toggleTransportTile('auto')">
+        <div class="pt-icon">🚗</div>
+        <div class="pt-label">Auto</div>
+        <div class="pt-check">✓</div>
+        <div id="tt-auto-hint" style="display:none;font-size:10px;color:var(--gold);margin-top:3px;line-height:1.3">Fahrerlaubnis<br>erforderlich ↑</div>
+      </div>
+    </div>
+  </div>
 
   <div style="height:8px"></div>
   <div class="hint" style="margin-bottom:10px">Klicken Sie auf „Bei Omio suchen", suchen Sie Ihre Verbindung und fügen Sie den Teilen-Text auf der nächsten Seite ein.</div>
@@ -507,47 +546,6 @@ input.req-field:focus{
   <div class="rpill" id="rpill-prices"></div>
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
-
-  <!-- AUTO -->
-  <div class="tblock auto" style="position:relative">
-    <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span><span class="cost-badge" id="auto-cost-badge">—</span></div>
-    <label class="flbl">Gesamtkosten Hin + Rück (€)</label>
-    <input class="inpsm req-field" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
-    <div id="auto-km-hint" style="font-size:11px;color:var(--muted);margin-top:5px;display:none"></div>
-    <!-- Hinreise transfer -->
-    <div style="margin-top:12px">
-      <div class="tleg-lbl">↗ Hinreise – Transferzeiten</div>
-      <div class="g2">
-        <div><label class="flbl-blue">Weg von Zuhause zum Fuhrpark (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-hs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Parkplatz zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-he" min="0" step="1" placeholder="0"></div>
-      </div>
-      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
-        ⏱ Zusätzlich werden automatisch <strong>10 Minuten</strong> für das Übernahmeprozedere am Fuhrpark aufgeschlagen.
-      </div>
-    </div>
-    <!-- Rückreise transfer -->
-    <div style="margin-top:10px">
-      <div class="tleg-lbl">↙ Rückreise – Transferzeiten</div>
-      <div class="g2">
-        <div><label class="flbl-blue">Weg zum Fahrzeug (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-rs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Fuhrpark nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
-      </div>
-      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
-        ⏱ Zusätzlich werden automatisch <strong>20 Minuten</strong> für Tanken und Abgabeprozedere am Fuhrpark aufgeschlagen.
-      </div>
-    </div>
-    <!-- Auto work section moved to page 3 -->
-    <!-- No-licence overlay -->
-    <div class="no-licence-banner" id="auto-overlay">
-      <div style="font-size:28px">🚫</div>
-      <div style="font-size:13px;font-weight:700;color:var(--red)">Nicht verfügbar</div>
-      <div style="font-size:11px;color:var(--muted);max-width:200px;line-height:1.5">Kein gültiger Führerschein vorhanden. Auto-Option ausgeschlossen.</div>
-    </div>
-  </div>
-
-  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
-    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
-  </div>
 
   <!-- BAHN -->
   <div class="tblock bahn">
@@ -671,6 +669,47 @@ input.req-field:focus{
   <input type="hidden" id="flug-hin-arr-station" value="">
   <input type="hidden" id="flug-rueck-dep-station" value="">
   <input type="hidden" id="flug-rueck-arr-station" value="">
+
+  <!-- AUTO -->
+  <div class="tblock auto" style="position:relative">
+    <div class="tblock-hdr"><span style="font-size:20px">🚗</span><span style="font-size:14px;font-weight:700">Auto</span><span class="cost-badge" id="auto-cost-badge">—</span></div>
+    <label class="flbl">Gesamtkosten Hin + Rück (€)</label>
+    <input class="inpsm req-field" type="number" id="auto-kosten" min="0" step="0.01" placeholder="z.B. 84.00  (0 = Firmenwagen / kostenlos)" style="max-width:300px">
+    <div id="auto-km-hint" style="font-size:11px;color:var(--muted);margin-top:5px;display:none"></div>
+    <!-- Hinreise transfer -->
+    <div style="margin-top:12px">
+      <div class="tleg-lbl">↗ Hinreise – Transferzeiten</div>
+      <div class="g2">
+        <div><label class="flbl-blue">Weg von Zuhause zum Fuhrpark (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-hs" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Parkplatz zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-he" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
+        ⏱ Zusätzlich werden automatisch <strong>10 Minuten</strong> für das Übernahmeprozedere am Fuhrpark aufgeschlagen.
+      </div>
+    </div>
+    <!-- Rückreise transfer -->
+    <div style="margin-top:10px">
+      <div class="tleg-lbl">↙ Rückreise – Transferzeiten</div>
+      <div class="g2">
+        <div><label class="flbl-blue">Weg zum Fahrzeug (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-rs" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Fuhrpark nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
+        ⏱ Zusätzlich werden automatisch <strong>20 Minuten</strong> für Tanken und Abgabeprozedere am Fuhrpark aufgeschlagen.
+      </div>
+    </div>
+    <!-- Auto work section moved to page 3 -->
+    <!-- No-licence overlay -->
+    <div class="no-licence-banner" id="auto-overlay">
+      <div style="font-size:28px">🚫</div>
+      <div style="font-size:13px;font-weight:700;color:var(--red)">Nicht verfügbar</div>
+      <div style="font-size:11px;color:var(--muted);max-width:200px;line-height:1.5">Kein gültiger Führerschein vorhanden. Auto-Option ausgeschlossen.</div>
+    </div>
+  </div>
+
+  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
+    💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
+  </div>
 
   <div class="err" id="err-s3"></div>
   <div style="height:6px"></div>
@@ -959,6 +998,10 @@ document.getElementById("licence-cb").addEventListener("click",()=>{
     ?"✓ Mindestens eine Person verfügt über einen gültigen Führerschein → Auto-Option wird berücksichtigt"
     :"Kein gültiger Führerschein → Auto-Option wird ausgeschlossen";
   updateAutoOverlay();
+  // Sync auto transport tile
+  state.transports.auto = state.hasLicence;
+  updateTransportTiles();
+  applyTransportVisibility();
 });
 
 function updateAutoOverlay(){
@@ -1165,6 +1208,7 @@ document.getElementById("btn-s1").addEventListener("click",()=>{
   var phf=document.getElementById("flug-persons-hint");
   if(phf) phf.textContent=state.persons>1?" (Preis pro Person)":"";
   updateHotelUI();
+  applyTransportVisibility();
   showScreen("s-prices");
 });
 
@@ -1691,6 +1735,8 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
       if(id.includes('bahn')) updateBahnBadge(); else updateFlugBadge();
     });
   });
+  state.transports={bahn:true,flug:true,auto:false};
+  updateTransportTiles();
   state.startText="";state.zielText="";state.startGeo=null;state.zielGeo=null;
   state.hD="";state.hT="10:00";state.rD="";state.rT="17:00";
   state.persons=1;state.hasLicence=false;state.priority="balanced";state.hotelPrice=100;
@@ -2146,6 +2192,53 @@ function setCostView(view){
   document.getElementById('cv-perperson').classList.toggle('active', view==='perperson');
   document.getElementById('cv-total').classList.toggle('active', view==='total');
   if(_lastItems.length > 0){ renderResults(_lastItems); }
+}
+
+// ── Transport selector ───────────────────────────────────────────────────────
+// State: which transports are selected
+state.transports = {bahn: true, flug: true, auto: false};
+
+function toggleTransportTile(type){
+  if(type === 'auto'){
+    if(!state.hasLicence){
+      // Show hint, don't activate
+      var hint = document.getElementById('tt-auto-hint');
+      if(hint){
+        hint.style.display = 'block';
+        setTimeout(function(){ hint.style.display = 'none'; }, 3000);
+      }
+      return;
+    }
+  }
+  state.transports[type] = !state.transports[type];
+  updateTransportTiles();
+  applyTransportVisibility();
+}
+
+function updateTransportTiles(){
+  ['bahn','flug','auto'].forEach(function(type){
+    var tile = document.getElementById('tt-'+type);
+    if(!tile) return;
+    var active = state.transports[type];
+    tile.classList.toggle('active', active);
+    // Disable auto tile if no licence
+    if(type === 'auto'){
+      tile.classList.toggle('disabled', !state.hasLicence);
+    }
+  });
+}
+
+function applyTransportVisibility(){
+  // Show/hide blocks on page 2 based on selected transports
+  var map = {
+    bahn: document.querySelector('.tblock.bahn'),
+    flug: document.querySelector('.tblock.flug'),
+    auto: document.querySelector('.tblock.auto')
+  };
+  Object.keys(map).forEach(function(type){
+    var el = map[type];
+    if(el) el.style.display = state.transports[type] ? '' : 'none';
+  });
 }
 
 // ── Init ────────────────────────────────────────────────────────────────────
