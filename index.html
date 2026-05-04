@@ -2055,6 +2055,59 @@ function buildOverview(items){
   workCon.innerHTML=workHtml;
 }
 
+
+// ── Live cost badges (page 2) ─────────────────────────────────────────────────
+function updateCostBadge(id, val){
+  var el=document.getElementById(id);
+  if(!el) return;
+  if(!val||isNaN(val)||val<=0){el.textContent='—';return;}
+  el.textContent=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(val);
+}
+function updateAutoBadge(){
+  var k=parseFloat(document.getElementById('auto-kosten').value)||0;
+  // Auto: cost is per car (entered by user) — show as-is (no hotel)
+  updateCostBadge('auto-cost-badge', k);
+}
+function updateBahnBadge(){
+  var hp=parseFloat(document.getElementById('bahn-hin-price').value)||0;
+  var rp=parseFloat(document.getElementById('bahn-rueck-price').value)||0;
+  var sh=document.getElementById('seat-hin').checked?5.50:0;
+  var sr=document.getElementById('seat-rueck').checked?5.50:0;
+  // Show per-person total (no hotel, no persons multiplier)
+  var total=hp+rp+sh+sr;
+  updateCostBadge('bahn-cost-badge', total>0?total:0);
+}
+function updateFlugBadge(){
+  var hp=parseFloat(document.getElementById('flug-hin-price').value)||0;
+  var rp=parseFloat(document.getElementById('flug-rueck-price').value)||0;
+  var bh=document.getElementById('bag-hin').checked?20:0;
+  var br=document.getElementById('bag-rueck').checked?20:0;
+  // Show per-person total (no hotel, no persons multiplier)
+  var total=hp+rp+bh+br;
+  updateCostBadge('flug-cost-badge', total>0?total:0);
+}
+// Hook badge updates to inputs
+['auto-kosten'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input',updateAutoBadge);
+});
+['bahn-hin-price','bahn-rueck-price'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input',updateBahnBadge);
+});
+['flug-hin-price','flug-rueck-price'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input',updateFlugBadge);
+});
+['seat-hin-cb','seat-rueck-cb'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('click',function(){setTimeout(updateBahnBadge,50);});
+});
+['bag-hin-cb','bag-rueck-cb'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('click',function(){setTimeout(updateFlugBadge,50);});
+});
+
 // ── Results page prio tiles ──────────────────────────────────────────────────
 document.addEventListener('click', function(e){
   var infoBox = document.getElementById('prio-info-box');
