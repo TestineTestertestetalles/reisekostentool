@@ -8,16 +8,16 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0c0c14;--s1:rgba(255,255,255,0.04);--s2:rgba(255,255,255,0.07);
-  --br:rgba(255,255,255,0.09);
+  --bg:#151528;--s1:rgba(255,255,255,0.07);--s2:rgba(255,255,255,0.11);
+  --br:rgba(255,255,255,0.14);
   --gold:#fbbf24;--gold2:#f59e0b;--green:#34d399;--red:#f87171;
   --orange:#fb923c;--blue:#60a5fa;--purple:#a78bfa;
-  --text:#e8e8f0;--muted:#6b6b8a;
+  --text:#f0f0f8;--muted:#9898b8;
   --r:14px;--rs:8px;
 }
 body{font-family:'DM Sans','Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;background:
-  radial-gradient(ellipse 60% 40% at 15% 20%,rgba(251,191,36,0.06) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 40% at 15% 20%,rgba(251,191,36,0.13) 0%,transparent 60%),
   radial-gradient(ellipse 50% 40% at 85% 80%,rgba(96,165,250,0.04) 0%,transparent 60%);
   pointer-events:none;z-index:0;}
 #app{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:40px 20px 80px;}
@@ -46,7 +46,7 @@ h1 span{color:var(--gold);}
 .cdot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 
 /* Inputs */
-.flbl{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;display:block;}
+.flbl{font-size:11px;color:rgba(241,245,249,0.85);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;display:block;}
 input,select{width:100%;background:var(--s2);border:1.5px solid var(--br);border-radius:var(--rs);padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s,background 0.2s;}
 input:focus,select:focus{border-color:rgba(251,191,36,0.6);background:rgba(255,255,255,0.09);}
 
@@ -101,7 +101,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .rmeta{margin-left:auto;color:var(--muted);font-size:11px;}
 .slbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .slbl::after{content:'';flex:1;height:1px;background:var(--br);}
-.hint{font-size:12px;color:var(--muted);line-height:1.6;padding:10px 13px;background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.15);border-radius:var(--rs);margin-bottom:14px;}
+.hint{font-size:12px;color:rgba(203,213,225,0.92);line-height:1.6;padding:10px 13px;background:rgba(96,165,250,0.13);border:1px solid rgba(96,165,250,0.3);border-radius:var(--rs);margin-bottom:14px;}
 
 /* Priority tiles */
 .prio-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
@@ -276,7 +276,7 @@ input.req-field:focus{
 .guide-step-body{flex:1;}
 .guide-step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
 .guide-step-desc{font-size:11px;color:var(--muted);line-height:1.5;}
-.guide-tip{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:9px 11px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px;font-size:11px;color:#c8a84b;line-height:1.5;}
+.guide-tip{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:9px 11px;background:rgba(251,191,36,0.13);border:1px solid rgba(251,191,36,0.2);border-radius:6px;font-size:11px;color:#c8a84b;line-height:1.5;}
 /* ── Cost view toggle ── */
 .cost-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
 .cost-view-tile{padding:10px;border-radius:8px;text-align:center;cursor:pointer;transition:all 0.15s;border:1.5px solid var(--br);background:var(--s1);}
@@ -289,7 +289,7 @@ input.req-field:focus{
 .transport-tile{flex:1;padding:12px 8px;border-radius:8px;text-align:center;cursor:pointer;
   transition:all 0.15s;border:1.5px solid var(--br);background:var(--s1);position:relative;}
 .transport-tile.active{border-color:rgba(52,211,153,0.5);background:rgba(52,211,153,0.08);}
-.transport-tile.active.auto{border-color:rgba(251,191,36,0.5);background:rgba(251,191,36,0.06);}
+.transport-tile.active.auto{border-color:rgba(251,191,36,0.5);background:rgba(251,191,36,0.13);}
 .transport-tile.active.flug{border-color:rgba(96,165,250,0.5);background:rgba(96,165,250,0.08);}
 .transport-tile.disabled{opacity:0.45;cursor:not-allowed;}
 .transport-tile .pt-icon{font-size:22px;margin-bottom:4px;}
@@ -319,6 +319,18 @@ input.req-field:focus{
   opacity:0;transition:opacity 0.4s ease,transform 0.4s ease;pointer-events:none;
   white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
 .ee-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* ── Destination database card ── */
+.dest-card{background:rgba(96,165,250,0.08);border:1.5px solid rgba(96,165,250,0.3);border-radius:var(--rs);padding:14px 16px;margin-top:8px;}
+.dest-select{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;margin-bottom:8px;}
+.dest-times{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.dest-time-row{font-size:12px;display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:5px;}
+.dest-time-val{font-weight:700;color:rgba(110,231,183,0.97);}
+.dest-manual{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:6px;padding:10px;margin-top:4px;display:none;}
+.dest-manual.open{display:block;}
+.dest-manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.dest-save-btn{width:100%;margin-top:8px;padding:8px;background:rgba(167,139,250,0.12);border:1px dashed rgba(167,139,250,0.4);border-radius:6px;font-size:12px;color:rgba(196,181,253,0.9);cursor:pointer;font-family:inherit;}
+.dest-save-btn:hover{background:rgba(167,139,250,0.2);}
+.dest-applied{font-size:11px;color:rgba(110,231,183,0.8);margin-top:6px;display:none;}
 </style>
 </head>
 <body>
@@ -353,10 +365,10 @@ input.req-field:focus{
     <div class="ctitle"><span class="cdot" style="background:var(--gold)"></span> Route</div>
     <div class="stk">
       <div>
-        <label class="flbl">Startort</label>
+        <label class="flbl">Startort <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.7">(nur Stadt)</span></label>
         <div class="acwrap">
           <div class="ac-inp-wrap">
-            <input id="inp-start" type="text" class="req-field" placeholder="Startort eingeben…" autocomplete="off">
+            <input id="inp-start" type="text" class="req-field" placeholder="z. B. Berlin" autocomplete="off">
             <span class="ac-icon">📍</span>
           </div>
           <div class="drop" id="drop-start"></div>
@@ -368,15 +380,56 @@ input.req-field:focus{
         <div class="divl"></div>
       </div>
       <div>
-        <label class="flbl">Zielort</label>
+        <label class="flbl">Zielort <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.7">(nur Stadt)</span></label>
         <div class="acwrap">
           <div class="ac-inp-wrap">
-            <input id="inp-ziel" type="text" class="req-field" placeholder="Zielort eingeben…" autocomplete="off">
+            <input id="inp-ziel" type="text" class="req-field" placeholder="z. B. Stuttgart" autocomplete="off">
             <span class="ac-icon">🎯</span>
           </div>
           <div class="drop" id="drop-ziel"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Destination database card -->
+  <div class="dest-card" id="dest-card" style="display:none">
+    <div class="ctitle" style="margin-bottom:10px">
+      <span class="cdot" style="background:var(--blue)"></span>📍 Bekanntes Ziel auswählen
+    </div>
+    <select class="dest-select" id="dest-select" onchange="onDestSelect(this.value)">
+      <option value="">— Bitte wählen —</option>
+    </select>
+    <div id="dest-times-display" style="display:none">
+      <div class="dest-times">
+        <div class="dest-time-row">
+          <span>🚆 Bahnhof → Ziel</span>
+          <span class="dest-time-val" id="dest-bahn-te-val">—</span>
+        </div>
+        <div class="dest-time-row">
+          <span>✈️ Flughafen → Ziel</span>
+          <span class="dest-time-val" id="dest-flug-te-val">—</span>
+        </div>
+      </div>
+      <div class="dest-applied" id="dest-applied">✓ Transferzeiten werden auf Seite 2 automatisch eingetragen.</div>
+    </div>
+    <div id="dest-manual" class="dest-manual">
+      <div style="font-size:12px;font-weight:600;color:rgba(196,181,253,0.9);margin-bottom:4px">Transferzeiten manuell eingeben:</div>
+      <div class="dest-manual-grid">
+        <div>
+          <label class="flbl" style="color:rgba(148,163,184,0.8)">🚆 Bahnhof → Ziel (Min)</label>
+          <input class="inpsm" type="number" id="dest-manual-bahn" min="0" step="1" placeholder="z. B. 20">
+        </div>
+        <div>
+          <label class="flbl" style="color:rgba(148,163,184,0.8)">✈️ Flughafen → Ziel (Min)</label>
+          <input class="inpsm" type="number" id="dest-manual-flug" min="0" step="1" placeholder="z. B. 35">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label class="flbl" style="color:rgba(148,163,184,0.8)">Name für dieses Ziel (zum Speichern)</label>
+        <input class="inpsm" type="text" id="dest-manual-name" placeholder="z. B. Stuttgart Zentrum" style="width:100%;margin-top:4px">
+      </div>
+      <button class="dest-save-btn" onclick="saveNewDest()">💾 Als neues Ziel speichern</button>
     </div>
   </div>
 
@@ -593,7 +646,7 @@ input.req-field:focus{
   <div class="slbl">Preise &amp; Zeiten eintragen</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Preise, Abfahrts- und Ankunftszeiten aus Omio eintragen. Felder leer = Option wird nicht verglichen.</p>
 
-  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--rs);margin-bottom:14px;color:var(--purple);line-height:1.6">
+  <div style="font-size:12px;padding:9px 13px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:var(--rs);margin-bottom:14px;color:rgba(221,214,254,0.97);line-height:1.6">
     💡 <strong>Kombination Bahn &amp; Flug:</strong> Trage bei Bahn <em>oder</em> Flug jeweils mindestens einen Preis (Hin <em>oder</em> Rück) ein — das Tool erkennt automatisch alle sinnvollen Kombinationen.
   </div>
 
@@ -733,7 +786,7 @@ input.req-field:focus{
       <div class="tleg-lbl">↗ Hinreise – Transferzeiten</div>
       <div class="g2">
         <div><label class="flbl-blue">Weg von Zuhause zum Fuhrpark (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-hs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Parkplatz zum Ziel (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-he" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Fuhrpark zum Startpunkt (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-he" min="0" step="1" placeholder="0" style="display:none"><span style="font-size:12px;color:rgba(148,163,184,0.7);padding:8px 0;display:block">Kein Ziel-Transfer nötig</span></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>10 Minuten</strong> für das Übernahmeprozedere am Fuhrpark aufgeschlagen.
@@ -744,7 +797,7 @@ input.req-field:focus{
       <div class="tleg-lbl">↙ Rückreise – Transferzeiten</div>
       <div class="g2">
         <div><label class="flbl-blue">Weg zum Fahrzeug (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-rs" min="0" step="1" placeholder="0"></div>
-        <div><label class="flbl-blue">Weg vom Fuhrpark nach Hause (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
+        <div><label class="flbl-blue">Weg vom Ziel zum Fuhrpark (min)</label><input class="inpsm inpsm-blue req-field" type="number" id="auto-tr-re" min="0" step="1" placeholder="0"></div>
       </div>
       <div style="font-size:11px;color:var(--orange);margin-top:6px;padding:6px 10px;background:rgba(251,146,60,0.07);border-radius:6px;border:1px solid rgba(251,146,60,0.2)">
         ⏱ Zusätzlich werden automatisch <strong>20 Minuten</strong> für Tanken und Abgabeprozedere am Fuhrpark aufgeschlagen.
@@ -1016,7 +1069,7 @@ document.addEventListener("click",e=>{
 const inpStart=document.getElementById("inp-start");
 const inpZiel=document.getElementById("inp-ziel");
 inpStart.addEventListener("input",()=>{state.startGeo=null;inpStart.classList.remove("invalid");nominatim(inpStart.value,"drop-start",h=>{state.startText=h.short;state.startGeo=h;inpStart.value=h.short;updateAutoKmHint();});});
-inpZiel.addEventListener("input",()=>{state.zielGeo=null;inpZiel.classList.remove("invalid");nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();});});
+inpZiel.addEventListener("input",()=>{state.zielGeo=null;inpZiel.classList.remove("invalid");document.getElementById('dest-card').style.display='none';nominatim(inpZiel.value,"drop-ziel",h=>{state.zielText=h.short;state.zielGeo=h;inpZiel.value=h.short;updateAutoKmHint();rebuildDestSelect();document.getElementById('dest-card').style.display='block';});});
 
 // ── Swap button ───────────────────────────────────────────────────────────────
 document.getElementById("swap-btn").addEventListener("click",()=>{
@@ -1165,7 +1218,7 @@ function clearInvalid(){
 function isBlockComplete(prefix){
   // Returns true if a transport block has all required fields filled
   var fields = prefix==='auto'
-    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    ? ['auto-kosten','auto-tr-hs','auto-tr-rs']
     : prefix==='bahn'
     ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
        'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
@@ -1181,7 +1234,7 @@ function isBlockComplete(prefix){
 function isBlockPartial(prefix){
   // Returns true if at least one field is filled but block is not complete
   var fields = prefix==='auto'
-    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    ? ['auto-kosten','auto-tr-hs','auto-tr-rs']
     : prefix==='bahn'
     ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
        'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
@@ -1201,7 +1254,7 @@ function isBlockPartial(prefix){
 }
 function getMissingInBlock(prefix){
   var fields = prefix==='auto'
-    ? ['auto-kosten','auto-tr-hs','auto-tr-he','auto-tr-rs','auto-tr-re']
+    ? ['auto-kosten','auto-tr-hs','auto-tr-rs']
     : prefix==='bahn'
     ? ['bahn-hin-dep','bahn-hin-arr','bahn-hin-price',
        'bahn-rueck-dep','bahn-rueck-arr','bahn-rueck-price',
@@ -1665,7 +1718,7 @@ function renderCard(item,isBest,allItems){
 
     scoreExpl = costSentence+" · "+timeSentence;
     if(reversalLine){
-      scoreExpl += '<br><span style="color:var(--gold);font-size:11px">'+reversalLine+'</span>';
+      scoreExpl += '<br><span style="color:rgba(254,240,138,0.97);font-size:11px">'+reversalLine+'</span>';
     }
     scoreExpl += " · Effizienz-Score: "+bw+"% ("+prioName+")";
   }
@@ -1869,6 +1922,8 @@ document.getElementById("btn-new-search").addEventListener("click",()=>{
     var el=document.getElementById(id); if(el) delete el.dataset.userEdited;
   });
   inpStart.value="";inpZiel.value="";
+  document.getElementById('dest-card').style.display='none';
+  applyDestTransferTimes(null);
   document.querySelectorAll("[data-work]").forEach(function(t){ t.classList.toggle("active", t.dataset.work==="no"); });
   var wh = document.getElementById("work-travel-hint"); if(wh) wh.style.display="none";
   state.canWorkDuringTravel=false;
@@ -2422,9 +2477,126 @@ function applyTransportVisibility(){
   }
 })();
 
+
+// ── Destination Database ─────────────────────────────────────────────────────
+var DEFAULT_DESTINATIONS = [
+  {name:"Stuttgart",      bahnStation:"Stuttgart Hbf",          bahnMinutes:20, flugStation:"Stuttgart Airport (STR)", flugMinutes:35},
+  {name:"München",        bahnStation:"München Hbf",            bahnMinutes:25, flugStation:"München Airport (MUC)",   flugMinutes:50},
+  {name:"Frankfurt",      bahnStation:"Frankfurt Hbf",          bahnMinutes:20, flugStation:"Frankfurt Airport (FRA)", flugMinutes:30},
+  {name:"Hamburg",        bahnStation:"Hamburg Hbf",            bahnMinutes:20, flugStation:"Hamburg Airport (HAM)",   flugMinutes:30},
+  {name:"Berlin",         bahnStation:"Berlin Hbf",             bahnMinutes:25, flugStation:"Berlin Brandenburg (BER)",flugMinutes:45},
+  {name:"Düsseldorf",     bahnStation:"Düsseldorf Hbf",         bahnMinutes:20, flugStation:"Düsseldorf Airport (DUS)",flugMinutes:25},
+  {name:"Köln",           bahnStation:"Köln Hbf",               bahnMinutes:15, flugStation:"Köln/Bonn Airport (CGN)", flugMinutes:35},
+  {name:"Leipzig",        bahnStation:"Leipzig Hbf",            bahnMinutes:20, flugStation:"Leipzig/Halle Airport",   flugMinutes:40},
+  {name:"Hannover",       bahnStation:"Hannover Hbf",           bahnMinutes:20, flugStation:"Hannover Airport (HAJ)",  flugMinutes:30},
+  {name:"Nürnberg",       bahnStation:"Nürnberg Hbf",           bahnMinutes:20, flugStation:"Nürnberg Airport (NUE)", flugMinutes:25},
+];
+
+function loadDestinations(){
+  var saved = [];
+  try{ saved = JSON.parse(localStorage.getItem('rkt_destinations')||'[]'); }catch(e){}
+  return DEFAULT_DESTINATIONS.concat(saved);
+}
+
+function saveNewDest(){
+  var name  = document.getElementById('dest-manual-name').value.trim();
+  var bahn  = parseInt(document.getElementById('dest-manual-bahn').value)||0;
+  var flug  = parseInt(document.getElementById('dest-manual-flug').value)||0;
+  if(!name){alert('Bitte einen Namen für das Ziel eingeben.');return;}
+  if(!bahn && !flug){alert('Bitte mindestens eine Transferzeit eingeben.');return;}
+  var saved = [];
+  try{ saved = JSON.parse(localStorage.getItem('rkt_destinations')||'[]'); }catch(e){}
+  // Check for duplicates
+  var existing = saved.findIndex(function(d){return d.name.toLowerCase()===name.toLowerCase();});
+  var newEntry = {name:name, bahnStation:name+' Hbf', bahnMinutes:bahn, flugStation:name+' Flughafen', flugMinutes:flug, custom:true};
+  if(existing>=0) saved[existing]=newEntry; else saved.push(newEntry);
+  localStorage.setItem('rkt_destinations', JSON.stringify(saved));
+  rebuildDestSelect();
+  // Select the newly saved destination
+  var sel = document.getElementById('dest-select');
+  var allDests = loadDestinations();
+  var idx = allDests.findIndex(function(d){return d.name===name;});
+  if(idx>=0){ sel.value=String(idx); onDestSelect(String(idx)); }
+  document.getElementById('dest-manual').classList.remove('open');
+}
+
+function rebuildDestSelect(){
+  var sel = document.getElementById('dest-select');
+  if(!sel) return;
+  var dests = loadDestinations();
+  sel.innerHTML = '<option value="">— Bitte wählen —</option>';
+  dests.forEach(function(d,i){
+    var opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = d.name + (d.custom?' ★':'') + ' – 🚆 '+d.bahnMinutes+'min / ✈️ '+d.flugMinutes+'min';
+    sel.appendChild(opt);
+  });
+  // Add manual option
+  var manOpt = document.createElement('option');
+  manOpt.value = 'manual';
+  manOpt.textContent = '➕ Anderes Ziel / Zeiten manuell eingeben';
+  sel.appendChild(manOpt);
+}
+
+function onDestSelect(val){
+  var timesDiv  = document.getElementById('dest-times-display');
+  var manualDiv = document.getElementById('dest-manual');
+  var appliedEl = document.getElementById('dest-applied');
+  if(!val || val===''){
+    timesDiv.style.display='none';
+    manualDiv.classList.remove('open');
+    // Clear auto-filled fields
+    applyDestTransferTimes(null);
+    return;
+  }
+  if(val==='manual'){
+    timesDiv.style.display='none';
+    manualDiv.classList.add('open');
+    applyDestTransferTimes(null);
+    return;
+  }
+  manualDiv.classList.remove('open');
+  var dests = loadDestinations();
+  var dest = dests[parseInt(val)];
+  if(!dest) return;
+  document.getElementById('dest-bahn-te-val').textContent = dest.bahnMinutes+' Min';
+  document.getElementById('dest-flug-te-val').textContent = dest.flugMinutes+' Min';
+  timesDiv.style.display='block';
+  appliedEl.style.display='block';
+  applyDestTransferTimes(dest);
+}
+
+function applyDestTransferTimes(dest){
+  // Fill bahn-hin-te, bahn-rueck-ts, flug-hin-te, flug-rueck-ts
+  var fields = ['bahn-hin-te','bahn-rueck-ts','flug-hin-te','flug-rueck-ts'];
+  fields.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(!dest){ 
+      if(el.dataset.destFilled==='1'){ el.value=''; delete el.dataset.destFilled; }
+      el.style.borderColor='';
+      return;
+    }
+    var minutes = (id.indexOf('bahn')>=0) ? dest.bahnMinutes : dest.flugMinutes;
+    el.value = minutes;
+    el.dataset.destFilled = '1';
+    el.style.borderColor = 'rgba(52,211,153,0.6)';
+    el.dispatchEvent(new Event('change'));
+  });
+}
+
+function showDestCard(){
+  var card = document.getElementById('dest-card');
+  if(card) card.style.display = (state.zielText && state.zielText.length > 1) ? 'block' : 'none';
+}
+
+// Show dest card when ziel is selected
+var origZielSelect = null; // patched below after inpZiel listener setup
+
 // ── Init ────────────────────────────────────────────────────────────────────
 updateHotelUI();
 updateAutoOverlay();
+rebuildDestSelect();
 </script>
 
 <div class="ee-toast" id="ee-toast"></div>
